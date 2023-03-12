@@ -53,7 +53,8 @@ namespace CustomSkills
 		cv.SetUnicode();
 		cv.LoadFile(a_file.string().data());
 
-		auto GetStringValue = [&cv](const char* a_section, const char* a_key, const char* a_default) -> std::string
+		auto GetStringValue =
+			[&cv](const char* a_section, const char* a_key, const char* a_default) -> std::string
 		{
 			std::string s = cv.GetValue(a_section, a_key, a_default);
 			if (s.size() >= 2 && s.front() == '"' && s.back() == '"') {
@@ -65,17 +66,27 @@ namespace CustomSkills
 
 		const auto dataHandler = RE::TESDataHandler::GetSingleton();
 
-		sk->Name = GetStringValue("", "Name", "Vampire Lord");
-		sk->Description = GetStringValue(
-			"",
-			"Description",
-			"Kill enemies with the Drain Life or bite power attack to earn perks. Each new perk "
-			"requires a few more feedings.");
+		RE::BSString defaultName;
+		RE::BSString defaultDescription;
+		auto vampireTree = dataHandler->LookupForm<RE::ActorValueInfo>(0x646, "Skyrim.esm");
+		if (vampireTree) {
+			defaultName = vampireTree->GetFullName();
+			vampireTree->GetDescription(defaultDescription, nullptr);
+		}
+
+		std::string name = GetStringValue("", "Name", defaultName.c_str());
+		std::string description = GetStringValue("", "Description", defaultDescription.c_str());
+		SKSE::Translation::Translate(name, name);
+		SKSE::Translation::Translate(description, description);
+
+		sk->Name = name;
+		sk->Description = description;
+
 		sk->Skydome = GetStringValue("", "Skydome", "DLC01/Interface/INTVampirePerkSkydome.nif");
 		sk->NormalNif = cv.GetBoolValue("", "SkydomeNormalNif", false);
 
-		auto levelFile = GetStringValue("", "LevelFile", "Skyrim.esm");
-		auto levelId = cv.GetLongValue("", "LevelId", 0x646);
+		auto levelFile = GetStringValue("", "LevelFile", "");
+		auto levelId = cv.GetLongValue("", "LevelId", 0x0);
 		sk->Level = dataHandler->LookupForm<RE::TESGlobal>(levelId, levelFile);
 
 		auto ratioFile = GetStringValue("", "RatioFile", "");
