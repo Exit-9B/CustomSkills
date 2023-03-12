@@ -41,6 +41,7 @@ namespace RE
 			inline constexpr auto ProcessButton = REL::ID(52520);
 			inline constexpr auto ProcessMessage = REL::ID(52510);
 			inline constexpr auto Rotate = REL::ID(52534);
+			inline constexpr auto SelectPerk = REL::ID(52521);
 			inline constexpr auto SelectStar = REL::ID(52542);
 			inline constexpr auto SetBeastSkillInfo = REL::ID(52546);
 			inline constexpr auto SetCameraTarget = REL::ID(52530);

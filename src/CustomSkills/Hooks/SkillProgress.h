@@ -11,8 +11,8 @@ namespace CustomSkills
 		// Show available perk points
 		static void CurrentPerkPointsPatch();
 
-		// Spend or add perk points
-		static void ModifyPerkPointsPatch();
+		// Spend perk points
+		static void SelectPerkPatch();
 
 		// Show skill level and XP
 		static void SkillProgressPatch();
@@ -29,7 +29,7 @@ namespace CustomSkills
 		// Set requirements text when using GetGlobalValue
 		static void RequirementsTextPatch();
 
-		static void ModifyPerkCount(std::int32_t a_countDelta);
+		static void ModifyPerkCount(RE::StatsMenu* a_statsMenu, std::int32_t a_countDelta);
 
 		static void GetSkillProgress(
 			RE::PlayerCharacter::PlayerSkills* a_playerSkills,
@@ -45,5 +45,7 @@ namespace CustomSkills
 			std::int32_t a_bufLen,
 			const char* a_prefix,
 			const char* a_suffix);
+
+		inline static REL::Relocation<decltype(&ModifyPerkCount)> _ModifyPerkCount;
 	};
 }

@@ -11,7 +11,7 @@ namespace CustomSkills
 	void SkillProgress::WriteHooks()
 	{
 		CurrentPerkPointsPatch();
-		ModifyPerkPointsPatch();
+		SelectPerkPatch();
 		SkillProgressPatch();
 		SkillLevelPatch();
 		SkillLevelPatch2();
@@ -43,28 +43,13 @@ namespace CustomSkills
 		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 
-	void SkillProgress::ModifyPerkPointsPatch()
+	void SkillProgress::SelectPerkPatch()
 	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::ModifyPerkCount, 0x62);
-		REL::make_pattern<"48 8B 15">().match_or_fail(hook.address());
+		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::SelectPerk, 0x1CD);
+		REL::make_pattern<"E8">().match_or_fail(hook.address());
 
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_hookAddr)
-			{
-				mov(ecx, edi);
-				mov(rax, reinterpret_cast<std::uintptr_t>(&ModifyPerkCount));
-				call(rax);
-
-				jmp(ptr[rip]);
-				dq(a_hookAddr + 0x1D);
-			}
-		};
-
-		auto patch = new Patch(hook.address());
-		patch->ready();
-
-		util::write_14branch(hook.address(), patch->getCode());
+		auto& trampoline = SKSE::GetTrampoline();
+		_ModifyPerkCount = trampoline.write_call<5>(hook.address(), &ModifyPerkCount);
 	}
 
 	void SkillProgress::SkillProgressPatch()
@@ -191,7 +176,7 @@ namespace CustomSkills
 		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
-	void SkillProgress::ModifyPerkCount(std::int32_t a_countDelta)
+	void SkillProgress::ModifyPerkCount(RE::StatsMenu* a_statsMenu, std::int32_t a_countDelta)
 	{
 		if (CustomSkillsManager::IsOurMenuMode()) {
 			if (a_countDelta > 0) {
@@ -217,12 +202,7 @@ namespace CustomSkills
 			}
 		}
 		else {
-			if (const auto player = RE::PlayerCharacter::GetSingleton()) {
-				auto newCount = player->perkCount + a_countDelta;
-				if (newCount >= 0) {
-					player->perkCount = static_cast<std::uint8_t>(newCount);
-				}
-			}
+			_ModifyPerkCount(a_statsMenu, a_countDelta);
 		}
 	}
 
