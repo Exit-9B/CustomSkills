@@ -23,7 +23,7 @@ namespace CustomSkills
 
 		static void CloseStatsMenu();
 
-		static void OpenStatsMenu();
+		static void OpenStatsMenu(std::shared_ptr<Skill> a_skill);
 
 		static bool IsMenuControlsEnabled();
 
@@ -47,7 +47,9 @@ namespace CustomSkills
 
 		static float GetBaseSkillLevel(RE::ActorValue a_skill);
 
-		static Skill* FindSkillFromGlobalLevel(RE::TESGlobal* a_global);
+		static std::shared_ptr<Skill> FindSkill(const std::string& a_key);
+
+		static std::shared_ptr<Skill> FindSkillFromGlobalLevel(RE::TESGlobal* a_global);
 
 		static void UpdateSkills();
 
@@ -64,7 +66,10 @@ namespace CustomSkills
 
 		inline static RE::BGSSkillPerkTreeNode* _originalSkillTree = nullptr;
 		inline static std::uint32_t _originalSkillTreeWidth = 3;
+
 		inline static std::vector<std::shared_ptr<Skill>> _skills;
+		inline static std::map<std::string, std::shared_ptr<Skill>> _skillIds;
+
 		inline static std::shared_ptr<Skill> _menuSkill = nullptr;
 		inline static MenuState _menuState = MenuState::None;
 		inline static RE::BSFixedString _colorOfSkillNormal = "#FFFFFF";

@@ -6,6 +6,7 @@
 #include "CustomSkills/Hooks/SkillInfo.h"
 #include "CustomSkills/Hooks/SkillProgress.h"
 #include "CustomSkills/Hooks/Update.h"
+#include "Papyrus/CustomSkills.h"
 
 namespace
 {
@@ -70,6 +71,8 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	SkillProgress::WriteHooks();
 	Legendary::WriteHooks();
 	BeastSkillInfo::WriteHooks();
+
+	SKSE::GetPapyrusInterface()->Register(Papyrus::CustomSkills::RegisterFuncs);
 
 	SKSE::GetMessagingInterface()->RegisterListener(
 		[](auto a_msg)

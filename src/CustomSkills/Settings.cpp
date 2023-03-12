@@ -6,9 +6,9 @@
 
 namespace CustomSkills
 {
-	auto Settings::ReadSkills() -> std::vector<std::shared_ptr<Skill>>
+	auto Settings::ReadSkills() -> std::map<std::string, std::shared_ptr<Skill>>
 	{
-		std::vector<std::shared_ptr<Skill>> skills;
+		std::map<std::string, std::shared_ptr<Skill>> skills;
 
 		auto dir = std::filesystem::path("Data/NetScriptFramework/Plugins");
 		std::error_code ec;
@@ -34,7 +34,7 @@ namespace CustomSkills
 				continue;
 
 			if (auto sk = ReadSkill(entry.path())) {
-				skills.push_back(sk);
+				skills[key] = sk;
 			}
 		}
 
@@ -100,10 +100,6 @@ namespace CustomSkills
 		auto showMenuFile = GetStringValue("", "ShowMenuFile", "");
 		auto showMenuId = cv.GetLongValue("", "ShowMenuId", 0x0);
 		sk->OpenMenu = dataHandler->LookupForm<RE::TESGlobal>(showMenuId, showMenuFile);
-		if (!sk->OpenMenu) {
-			Error(a_file, "Failed to load form for showing skill menu global variable!");
-			return nullptr;
-		}
 
 		auto perkPointsFile = GetStringValue("", "PerkPointsFile", "");
 		auto perkPointsId = cv.GetLongValue("", "PerkPointsId", 0x0);

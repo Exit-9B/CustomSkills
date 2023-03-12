@@ -19,7 +19,13 @@ namespace CustomSkills
 
 	void CustomSkillsManager::LoadSkills()
 	{
-		_skills = Settings::ReadSkills();
+		_skillIds = Settings::ReadSkills();
+
+		_skills.clear();
+
+		for (auto& [key, skill] : _skillIds) {
+			_skills.push_back(skill);
+		}
 	}
 
 	void CustomSkillsManager::ShowLevelup(std::string_view a_name, std::int32_t a_level)
@@ -50,8 +56,10 @@ namespace CustomSkills
 		}
 	}
 
-	void CustomSkillsManager::OpenStatsMenu()
+	void CustomSkillsManager::OpenStatsMenu(std::shared_ptr<Skill> a_skill)
 	{
+		_menuSkill = a_skill;
+
 		if (!_menuSkill || !_menuSkill->SkillTree) {
 			return;
 		}
@@ -189,12 +197,21 @@ namespace CustomSkills
 		return playerCharacter->GetBaseActorValue(a_skill);
 	}
 
-	Skill* CustomSkillsManager::FindSkillFromGlobalLevel(RE::TESGlobal* a_global)
+	std::shared_ptr<Skill> CustomSkillsManager::FindSkill(const std::string& a_key)
+	{
+		if (auto i = _skillIds.find(a_key); i != _skillIds.end()) {
+			return i->second;
+		}
+
+		return nullptr;
+	}
+
+	std::shared_ptr<Skill> CustomSkillsManager::FindSkillFromGlobalLevel(RE::TESGlobal* a_global)
 	{
 		for (auto& sk : _skills) {
 			if (sk->Level && sk->Level->type == RE::TESGlobal::Type::kShort) {
 				if (sk->Level == a_global) {
-					return sk.get();
+					return sk;
 				}
 			}
 		}
@@ -221,8 +238,7 @@ namespace CustomSkills
 				if (amt > 0) {
 					sk->OpenMenu->value = 0;
 
-					_menuSkill = sk;
-					OpenStatsMenu();
+					OpenStatsMenu(sk);
 					return;
 				}
 			}
@@ -248,7 +264,7 @@ namespace CustomSkills
 		}
 
 		if (reload && !IsStatsMenuOpen()) {
-			_skills = Settings::ReadSkills();
+			LoadSkills();
 		}
 	}
 
