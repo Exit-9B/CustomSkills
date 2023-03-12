@@ -13,7 +13,7 @@ namespace Papyrus::CustomSkills
 		return 1;
 	}
 
-	void OpenCustomSkillMenu(RE::StaticFunctionTag*, std::string asSkillId)
+	void OpenCustomSkillMenu(RE::StaticFunctionTag*, RE::BSFixedString asSkillId)
 	{
 		if (auto skill = CustomSkillsManager::FindSkill(asSkillId)) {
 			CustomSkillsManager::OpenStatsMenu(skill);
@@ -22,7 +22,7 @@ namespace Papyrus::CustomSkills
 
 	void ShowSkillIncreaseMessage(
 		RE::StaticFunctionTag*,
-		std::string asSkillId,
+		RE::BSFixedString asSkillId,
 		std::int32_t aiSkillLevel)
 	{
 		if (auto skill = CustomSkillsManager::FindSkill(asSkillId)) {

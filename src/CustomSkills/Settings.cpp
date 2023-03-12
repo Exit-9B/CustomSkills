@@ -6,9 +6,9 @@
 
 namespace CustomSkills
 {
-	auto Settings::ReadSkills() -> std::map<std::string, std::shared_ptr<Skill>>
+	auto Settings::ReadSkills() -> RE::BSTHashMap<RE::BSFixedString, std::shared_ptr<Skill>>
 	{
-		std::map<std::string, std::shared_ptr<Skill>> skills;
+		RE::BSTHashMap<RE::BSFixedString, std::shared_ptr<Skill>> skills;
 
 		auto dir = std::filesystem::path("Data/NetScriptFramework/Plugins");
 		std::error_code ec;
@@ -34,7 +34,7 @@ namespace CustomSkills
 				continue;
 
 			if (auto sk = ReadSkill(entry.path())) {
-				skills[key] = sk;
+				skills.insert({ key, sk });
 			}
 		}
 

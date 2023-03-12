@@ -197,7 +197,7 @@ namespace CustomSkills
 		return playerCharacter->GetBaseActorValue(a_skill);
 	}
 
-	std::shared_ptr<Skill> CustomSkillsManager::FindSkill(const std::string& a_key)
+	std::shared_ptr<Skill> CustomSkillsManager::FindSkill(const RE::BSFixedString& a_key)
 	{
 		if (auto i = _skillIds.find(a_key); i != _skillIds.end()) {
 			return i->second;
