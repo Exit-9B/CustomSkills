@@ -57,13 +57,10 @@ namespace CustomSkills
 		REL::make_pattern<
 			"8B D0 "
 			"48 8D 8F ?? 00 00 00 "
-			"FF 53 18 "
-			"0F 2F 05 ?? ?? ?? ?? "
-			"0F 82 5A 09 00 00">()
+			"FF 53 18">()
 			.match_or_fail(hook.address());
 
-
-		static auto GetSkillLevelForLegendaryReset = +[](RE::ActorValue a_actorValue)
+		static auto GetSkillLevelForLegendaryReset = +[](RE::ActorValue a_actorValue) -> float
 		{
 			if (CustomSkillsManager::IsOurMenuMode()) {
 				if (CustomSkillsManager::_menuSkill->Level &&
@@ -82,23 +79,22 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch(std::uintptr_t a_hookAddr)
+			Patch()
 			{
 				mov(ecx, eax);
-				mov(rax, reinterpret_cast<std::uintptr_t>(&GetSkillLevelForLegendaryReset));
-				call(rax);
-
-				jmp(ptr[rip]);
-				dq(a_hookAddr + 0xC);
+				mov(rax, reinterpret_cast<std::uintptr_t>(GetSkillLevelForLegendaryReset));
+				jmp(rax);
 			}
 		};
 
-		auto patch = new Patch(hook.address());
+		auto patch = new Patch();
 		patch->ready();
 
-		util::write_14branch(hook.address(), patch->getCode());
-	}
+		REL::safe_fill(hook.address(), REL::NOP, 0xC);
 
+		auto& trampoline = SKSE::GetTrampoline();
+		trampoline.write_call<6>(hook.address(), patch->getCode());
+	}
 
 	void Legendary::ProcessMessagePatch()
 	{
