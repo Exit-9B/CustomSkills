@@ -48,7 +48,12 @@ namespace CustomSkills
 		auto GetSkillColor = +[](std::uint32_t a_skill) -> const char*
 		{
 			if (CustomSkillsManager::IsOurMenuMode()) {
-				return CustomSkillsManager::_colorOfSkillNormal.c_str();
+				if (CustomSkillsManager::_menuSkill->UpdateColor()) {
+					return CustomSkillsManager::_menuSkill->ColorStr.c_str();
+				}
+				else {
+					return CustomSkillsManager::_colorOfSkillNormal.c_str();
+				}
 			}
 
 			return _GetSkillColor(a_skill);
