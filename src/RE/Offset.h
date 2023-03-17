@@ -9,6 +9,11 @@ namespace RE
 			inline constexpr auto GetRequirementsText = REL::ID(23826);
 		}
 
+		namespace BGSSkillPerkTreeNode
+		{
+			inline constexpr auto RefundPerks = REL::ID(52564);
+		}
+
 		namespace BSTArrayBase
 		{
 			inline constexpr auto ListAlloc = REL::ID(68163);
@@ -60,7 +65,6 @@ namespace RE
 		inline constexpr auto IsLegendaryDifficultyAvailable = REL::ID(15868);
 		inline constexpr auto LastChosenMenuIndex = REL::ID(383192);
 		inline constexpr auto OpenStatsMenu = REL::ID(52516);
-		inline constexpr auto RefundPerks = REL::ID(52564);
 		inline constexpr auto ShowHUDMessage = REL::ID(51646);
 	}
 }

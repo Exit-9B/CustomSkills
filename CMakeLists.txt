@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 
 project(
 	CustomSkills
-	VERSION 2.0.1
+	VERSION 2.0.2
 	LANGUAGES CXX
 )
 

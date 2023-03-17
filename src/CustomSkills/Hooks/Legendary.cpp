@@ -162,29 +162,18 @@ namespace CustomSkills
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(
 			RE::Offset::LegendarySkillResetConfirmCallback::Run,
-			0x1EB);
+			0x1F6);
 
-		REL::make_pattern<
-			"48 8B 01 "
-			"F3 0F 10 15 ?? ?? ?? ?? "
-			"8B 56 1C "
-			"FF 50 20">()
-			.match_or_fail(hook.address());
+		REL::make_pattern<"8B 56 1C FF 50 20">().match_or_fail(hook.address());
 
-		static auto ResetSkillLevel = +[](RE::ActorValue a_skill)
+		static auto LegendaryReset =
+			+[](RE::ActorValueOwner* a_avOwner, RE::ActorValue a_skill, float a_resetValue)
 		{
-			static auto
-				fLegendarySkillResetValue = RE::GameSettingCollection::GetSingleton()->GetSetting(
-					"fLegendarySkillResetValue");
-
 			if (CustomSkillsManager::IsOurMenuMode()) {
-				CustomSkillsManager::_menuSkill->LegendaryReset(
-					fLegendarySkillResetValue->GetFloat());
+				CustomSkillsManager::_menuSkill->LegendaryReset(a_resetValue);
 			}
 			else {
-				RE::PlayerCharacter::GetSingleton()->SetBaseActorValue(
-					a_skill,
-					fLegendarySkillResetValue->GetFloat());
+				a_avOwner->SetBaseActorValue(a_skill, a_resetValue);
 			}
 		};
 
@@ -192,16 +181,17 @@ namespace CustomSkills
 		{
 			Patch()
 			{
-				mov(ecx, ptr[rsi + 0x1C]);
-				mov(rax, reinterpret_cast<std::uintptr_t>(ResetSkillLevel));
-				call(rax);
-				nop(0x2);
+				mov(edx, ptr[rsi + offsetof(RE::LegendarySkillResetConfirmCallback, skill)]);
+				mov(rax, reinterpret_cast<std::uintptr_t>(LegendaryReset));
+				jmp(rax);
 			}
 		};
 
-		Patch patch{};
-		patch.ready();
-		assert(patch.getSize() == 0x11);
+		auto patch = new Patch();
+		patch->ready();
+
+		auto& trampoline = SKSE::GetTrampoline();
+		trampoline.write_call<6>(hook.address(), patch->getCode());
 	}
 
 	void Legendary::PlayerSkillsPatch()
@@ -210,18 +200,20 @@ namespace CustomSkills
 			RE::Offset::LegendarySkillResetConfirmCallback::Run,
 			0x20D);
 
-		using LegendaryReset_t = void(RE::PlayerCharacter::PlayerSkills*, RE::ActorValue);
-		static REL::Relocation<LegendaryReset_t> _LegendaryReset;
+		using MakeLegendary_t = void(RE::PlayerCharacter::PlayerSkills*, RE::ActorValue);
+		static REL::Relocation<MakeLegendary_t> _MakeLegendary;
+
+		auto MakeLegendary = +[](RE::PlayerCharacter::PlayerSkills* a_playerSkills,
+								 RE::ActorValue a_actorValue)
+		{
+			// We don't do this here for custom skills
+			if (!CustomSkillsManager::IsOurMenuMode()) {
+				_MakeLegendary(a_playerSkills, a_actorValue);
+			}
+		};
 
 		auto& trampoline = SKSE::GetTrampoline();
-		_LegendaryReset = trampoline.write_call<5>(
-			hook.address(),
-			+[](RE::PlayerCharacter::PlayerSkills* a_playerSkills, RE::ActorValue a_actorValue)
-			{
-				if (!CustomSkillsManager::IsOurMenuMode()) {
-					_LegendaryReset(a_playerSkills, a_actorValue);
-				}
-			});
+		_MakeLegendary = trampoline.write_call<5>(hook.address(), MakeLegendary);
 	}
 
 	void Legendary::LegendaryAvailablePatch()
@@ -266,17 +258,31 @@ namespace CustomSkills
 
 	void Legendary::RefundPerksPatch()
 	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::RefundPerks, 0xED);
+		auto hook = REL::Relocation<std::uintptr_t>(
+			RE::Offset::BGSSkillPerkTreeNode::RefundPerks,
+			0xED);
+
 		REL::make_pattern<"44 00 B8 ?? ?? 00 00">().match_or_fail(hook.address());
+
+		static auto ModifyPerkPoints = +[](std::uint8_t a_countDelta)
+		{
+			auto newCount = CustomSkillsManager::GetCurrentPerkPoints() + a_countDelta;
+			if (newCount > 255) {
+				newCount = 255;
+			}
+
+			CustomSkillsManager::SetCurrentPerkPoints(static_cast<std::uint8_t>(newCount));
+		};
 
 		struct Patch : Xbyak::CodeGenerator
 		{
 			Patch(std::uintptr_t a_hookAddr)
 			{
 				mov(cl, r15b);
-				mov(rax,
-					reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::SetCurrentPerkPoints));
+				mov(rax, reinterpret_cast<std::uintptr_t>(ModifyPerkPoints));
 				call(rax);
+				xor_(r8d, r8d);
+				mov(rdx, r13);
 
 				jmp(ptr[rip]);
 				dq(a_hookAddr + 0x7);
