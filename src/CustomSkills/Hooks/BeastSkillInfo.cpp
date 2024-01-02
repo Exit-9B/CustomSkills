@@ -43,22 +43,23 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t hookAddress)
 			{
 				mov(ecx, eax);
 				mov(rax,
 					reinterpret_cast<std::uintptr_t>(
 						&CustomSkillsManager::GetSkillProgressPercent));
 				call(rax);
-				nop(0x9);
+				jmp(ptr[rip]);
+				dq(hookAddress + 0x17);
 			}
 		};
 
-		Patch patch{};
-		patch.ready();
-		assert(patch.getSize() == 0x17);
+		auto patch = new Patch(hook.address());
+		patch->ready();
 
-		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
+		auto& trampoline = SKSE::GetTrampoline();
+		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 
 	void BeastSkillInfo::SkillNamePatch()

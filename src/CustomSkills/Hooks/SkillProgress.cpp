@@ -85,20 +85,22 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t hookAddress)
 			{
 				mov(ecx, edi);
 				mov(rax, reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetSkillLevel));
 				call(rax);
-				nop(0x8);
+
+				jmp(ptr[rip]);
+				dq(hookAddress + 0x16);
 			}
 		};
 
-		Patch patch{};
-		patch.ready();
-		assert(patch.getSize() == 0x16);
+		auto patch = new Patch(hook.address());
+		patch->ready();
 
-		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
+		auto& trampoline = SKSE::GetTrampoline();
+		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 
 	void SkillProgress::SkillLevelPatch2()
@@ -115,20 +117,22 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t hookAddress)
 			{
 				mov(ecx, r15d);
 				mov(rax, reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetSkillLevel));
 				call(rax);
-				nop(0x8);
+
+				jmp(ptr[rip]);
+				dq(hookAddress + 0x17);
 			}
 		};
 
-		Patch patch{};
-		patch.ready();
-		assert(patch.getSize() == 0x17);
+		auto patch = new Patch(hook.address());
+		patch->ready();
 
-		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
+		auto& trampoline = SKSE::GetTrampoline();
+		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 
 	void SkillProgress::PerkViewSkillLevelPatch()
