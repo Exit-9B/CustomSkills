@@ -61,7 +61,7 @@ namespace CustomSkills
 			"FF 53 18">()
 			.match_or_fail(hook.address());
 
-				static auto GetSkillLevelForLegendaryReset = +[](RE::ActorValue a_actorValue) -> float
+		static auto GetSkillLevelForLegendaryReset = +[](RE::ActorValue a_actorValue) -> float
 		{
 			if (CustomSkillsManager::IsOurMenuMode()) {
 				if (CustomSkillsManager::_menuSkill->Level &&
