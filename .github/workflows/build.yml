@@ -10,7 +10,6 @@ on:
 env:
   BUILD_TYPE: Release
   VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-cache
-  VCPKG_ROOT: C:\vcpkg
 
 jobs:
   build:
@@ -38,7 +37,7 @@ jobs:
         key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('main/**/vcpkg.json', 'vcpkg-version.txt') }}
 
     - name: Configure CMake
-      run: cmake --preset vs2022-windows
+      run: cmake --preset vs2022-windows -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake
 
     - name: Build
       run: cmake --build ${{ github.workspace }}/build --config ${{ env.BUILD_TYPE }}
