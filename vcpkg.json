@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "name": "customskills",
   "version": "1",
   "dependencies": [
@@ -8,5 +8,12 @@
     "spdlog",
     "xbyak",
     "simpleini"
+  ],
+  "builtin-baseline": "000d1bda1ffa95a73e0b40334fa4103d6f4d3d48",
+  "overrides": [
+    {
+      "name": "xbyak",
+      "version": "6.69"
+    }
   ]
 }
