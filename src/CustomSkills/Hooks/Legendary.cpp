@@ -274,24 +274,8 @@ namespace CustomSkills
 			}
 		};
 
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_funcAddr) : Xbyak::CodeGenerator(0x20)
-			{
-				Xbyak::Label funcLbl;
-
-				jmp(ptr[rip + funcLbl]);
-
-				L(funcLbl);
-				dq(a_funcAddr);
-			};
-		};
-
-		Patch patch{ reinterpret_cast<std::uintptr_t>(IsLegendaryAvailable) };
-		patch.ready();
-
 		REL::safe_fill(hook.address(), REL::NOP, 0x20);
-		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
+		util::write_14branch(hook.address(), IsLegendaryAvailable);
 	}
 
 	void Legendary::RefundPerksPatch()
