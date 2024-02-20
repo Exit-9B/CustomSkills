@@ -33,20 +33,28 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t a_funcAddr) : Xbyak::CodeGenerator(0x17)
 			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retn;
+
 				mov(ecx, r15d);
-				mov(rax,
-					reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel));
-				call(rax);
-				nop(0x8);
+				call(ptr[rip + funcLbl]);
+				jmp(retn);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retn);
 			}
 		};
 
-		Patch patch{};
+		Patch patch{ reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel) };
 		patch.ready();
-		assert(patch.getSize() == 0x17);
 
+		assert(patch.getSize() <= 0x17);
+
+		REL::safe_fill(hook.address(), REL::NOP, 0x17);
 		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
@@ -79,21 +87,32 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
 			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
+
 				mov(ecx, eax);
-				mov(rax, reinterpret_cast<std::uintptr_t>(GetSkillLevelForLegendaryReset));
-				jmp(rax);
+				call(ptr[rip + funcLbl]);
+				jmp(ptr[rip + retnLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
 			}
 		};
 
-		auto patch = new Patch();
+		auto patch = new Patch{
+			reinterpret_cast<std::uintptr_t>(GetSkillLevelForLegendaryReset),
+			hook.address() + 0xC
+		};
 		patch->ready();
 
-		REL::safe_fill(hook.address(), REL::NOP, 0xC);
-
 		auto& trampoline = SKSE::GetTrampoline();
-		trampoline.write_call<6>(hook.address(), patch->getCode());
+		REL::safe_fill(hook.address(), REL::NOP, 0xC);
+		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 
 	void Legendary::ProcessMessagePatch()
@@ -141,21 +160,31 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
 			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
+
 				mov(ecx, ptr[rsi + 0x1C]);
-				mov(rax,
-					reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel));
-				call(rax);
-				nop(0x1);
+				call(ptr[rip + funcLbl]);
+				jmp(ptr[rip + retnLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
 			}
 		};
 
-		Patch patch{};
-		patch.ready();
-		assert(patch.getSize() == 0x10);
+		auto patch = new Patch(
+			reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel),
+			hook.address() + 0x10);
+		patch->ready();
 
-		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
+		auto& trampoline = SKSE::GetTrampoline();
+		REL::safe_fill(hook.address(), REL::NOP, 0x10);
+		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 
 	void Legendary::ResetSkillLevelPatch()
@@ -179,15 +208,19 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t a_funcAddr)
 			{
+				Xbyak::Label funcLbl;
+
 				mov(edx, ptr[rsi + offsetof(RE::LegendarySkillResetConfirmCallback, skill)]);
-				mov(rax, reinterpret_cast<std::uintptr_t>(LegendaryReset));
-				jmp(rax);
+				jmp(ptr[rip + funcLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
 			}
 		};
 
-		auto patch = new Patch();
+		auto patch = new Patch(reinterpret_cast<std::uintptr_t>(LegendaryReset));
 		patch->ready();
 
 		auto& trampoline = SKSE::GetTrampoline();
@@ -243,16 +276,21 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t a_funcAddr) : Xbyak::CodeGenerator(0x20)
 			{
-				mov(rax, reinterpret_cast<std::uintptr_t>(IsLegendaryAvailable));
-				jmp(rax);
-			}
+				Xbyak::Label funcLbl;
+
+				jmp(ptr[rip + funcLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+			};
 		};
 
-		Patch patch{};
+		Patch patch{ reinterpret_cast<std::uintptr_t>(IsLegendaryAvailable) };
 		patch.ready();
 
+		REL::safe_fill(hook.address(), REL::NOP, 0x20);
 		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
@@ -276,23 +314,33 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch(std::uintptr_t a_hookAddr)
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
 			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
+
 				mov(cl, r15b);
-				mov(rax, reinterpret_cast<std::uintptr_t>(ModifyPerkPoints));
-				call(rax);
+				call(ptr[rip + funcLbl]);
 				xor_(r8d, r8d);
 				mov(rdx, r13);
 
-				jmp(ptr[rip]);
-				dq(a_hookAddr + 0x7);
+				jmp(ptr[rip + retnLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
 			}
 		};
 
-		auto patch = new Patch(hook.address());
+		auto patch = new Patch(
+			reinterpret_cast<std::uintptr_t>(ModifyPerkPoints),
+			hook.address() + 0x7);
 		patch->ready();
 
 		auto& trampoline = SKSE::GetTrampoline();
+		REL::safe_fill(hook.address(), REL::NOP, 0x7);
 		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 }

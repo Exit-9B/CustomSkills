@@ -26,7 +26,7 @@ namespace RE
 
 		namespace Main
 		{
-			inline constexpr auto Update = REL::ID(36564);
+			inline constexpr auto OnIdle = REL::ID(36564);
 		}
 
 		namespace PlayerSkills

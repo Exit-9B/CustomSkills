@@ -6,9 +6,9 @@
 
 namespace CustomSkills
 {
-	auto Settings::ReadSkills() -> RE::BSTHashMap<RE::BSFixedString, std::shared_ptr<Skill>>
+	auto Settings::ReadSkills() -> std::map<std::string, std::shared_ptr<Skill>, util::iless>
 	{
-		RE::BSTHashMap<RE::BSFixedString, std::shared_ptr<Skill>> skills;
+		std::map<std::string, std::shared_ptr<Skill>, util::iless> skills;
 
 		auto dir = std::filesystem::path("Data/NetScriptFramework/Plugins");
 		std::error_code ec;
@@ -34,7 +34,7 @@ namespace CustomSkills
 				continue;
 
 			if (auto sk = ReadSkill(entry.path())) {
-				skills.insert({ key, sk });
+				skills.insert({ std::move(key), sk });
 			}
 		}
 
@@ -79,8 +79,8 @@ namespace CustomSkills
 		SKSE::Translation::Translate(name, name);
 		SKSE::Translation::Translate(description, description);
 
-		sk->Name = name;
-		sk->Description = description;
+		sk->Name = std::move(name);
+		sk->Description = std::move(description);
 
 		sk->Skydome = GetStringValue("", "Skydome", "DLC01/Interface/INTVampirePerkSkydome.nif");
 		sk->NormalNif = cv.GetBoolValue("", "SkydomeNormalNif", false);

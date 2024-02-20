@@ -18,7 +18,7 @@ namespace CustomSkills
 	{
 		auto& trampoline = SKSE::GetTrampoline();
 
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::Main::Update, 0x3E);
+		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::Main::OnIdle, 0x3E);
 		REL::make_pattern<"E8">().match_or_fail(hook.address());
 
 		_DoFrame = trampoline.write_call<5>(hook.address(), &DoFrame);
@@ -36,25 +36,34 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch(std::uintptr_t a_hookAddr)
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
 			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
+
 				mov(r12, rcx);
 				mov(r13, rdx);
 
 				mov(cl, bl);
-				mov(rax, reinterpret_cast<std::uintptr_t>(SetBeastMode));
-				call(rax);
+				call(ptr[rip + funcLbl]);
 
 				xor_(r9d, r9d);
 				mov(rcx, r12);
 				mov(rdx, r13);
 
-				jmp(ptr[rip]);
-				dq(a_hookAddr + 0x6);
+				jmp(ptr[rip + retnLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
 			}
 		};
 
-		auto patch = new Patch(hook.address());
+		auto patch = new Patch(
+			reinterpret_cast<std::uintptr_t>(SetBeastMode),
+			hook.address() + 0x6);
 		patch->ready();
 
 		auto& trampoline = SKSE::GetTrampoline();
@@ -73,20 +82,28 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch(std::uintptr_t a_hookAddr)
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
 			{
-				mov(rax, reinterpret_cast<std::uintptr_t>(ExitMode));
-				call(rax);
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
 
-				jmp(ptr[rip]);
-				dq(a_hookAddr + 0x7);
+				call(ptr[rip + funcLbl]);
+
+				jmp(ptr[rip + retnLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
 			}
 		};
 
-		auto patch = new Patch(hook.address());
+		auto patch = new Patch(reinterpret_cast<std::uintptr_t>(ExitMode), hook.address() + 0x7);
 		patch->ready();
 
 		auto& trampoline = SKSE::GetTrampoline();
+		REL::safe_fill(hook.address(), REL::NOP, 0x7);
 		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 

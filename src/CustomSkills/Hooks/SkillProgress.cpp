@@ -26,17 +26,25 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch(std::uintptr_t a_hookAddr)
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
 			{
-				mov(rax,
-					reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetCurrentPerkPoints));
-				call(rax);
-				jmp(ptr[rip]);
-				dq(a_hookAddr + 0x7);
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
+
+				call(ptr[rip + funcLbl]);
+				jmp(ptr[rip + retnLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
 			}
 		};
 
-		auto patch = new Patch(hook.address());
+		auto patch = new Patch(
+			reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetCurrentPerkPoints),
+			hook.address() + 0x7);
 		patch->ready();
 
 		auto& trampoline = SKSE::GetTrampoline();
@@ -58,16 +66,21 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t a_funcAddr)
 			{
-				mov(rax, reinterpret_cast<std::uintptr_t>(&GetSkillProgress));
-				jmp(rax);
-			}
+				Xbyak::Label funcLbl;
+
+				jmp(ptr[rip + funcLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+			};
 		};
 
-		Patch patch{};
+		Patch patch{ reinterpret_cast<std::uintptr_t>(&GetSkillProgress) };
 		patch.ready();
 
+		REL::safe_fill(hook.address(), REL::NOP, 0x50);
 		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
@@ -85,19 +98,28 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t a_funcAddr) : Xbyak::CodeGenerator(0x16)
 			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retn;
+
 				mov(ecx, edi);
-				mov(rax, reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetSkillLevel));
-				call(rax);
-				nop(0x8);
+				call(ptr[rip + funcLbl]);
+				jmp(retn);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retn);
 			}
 		};
 
-		Patch patch{};
+		Patch patch{ reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetSkillLevel) };
 		patch.ready();
-		assert(patch.getSize() == 0x16);
 
+		assert(patch.getSize() <= 0x16);
+
+		REL::safe_fill(hook.address(), REL::NOP, 0x16);
 		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
@@ -115,19 +137,28 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t a_funcAddr) : Xbyak::CodeGenerator(0x17)
 			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retn;
+
 				mov(ecx, r15d);
-				mov(rax, reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetSkillLevel));
-				call(rax);
-				nop(0x8);
+				call(ptr[rip + funcLbl]);
+				jmp(retn);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retn);
 			}
 		};
 
-		Patch patch{};
+		Patch patch{ reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetSkillLevel) };
 		patch.ready();
-		assert(patch.getSize() == 0x17);
 
+		assert(patch.getSize() <= 0x17);
+
+		REL::safe_fill(hook.address(), REL::NOP, 0x17);
 		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
@@ -139,18 +170,26 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch(std::uintptr_t a_hookAddr)
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
 			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
+
 				mov(ecx, ptr[rbp + 0x678]);
-				mov(rax,
-					reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel));
-				call(rax);
-				jmp(ptr[rip]);
-				dq(a_hookAddr + 0x9);
+				call(ptr[rip + funcLbl]);
+				jmp(ptr[rip + retnLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
 			}
 		};
 
-		auto patch = new Patch(hook.address());
+		auto patch = new Patch(
+			reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel),
+			hook.address() + 0x9);
 		patch->ready();
 
 		auto& trampoline = SKSE::GetTrampoline();
@@ -163,16 +202,21 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t a_funcAddr)
 			{
-				mov(rax, reinterpret_cast<std::uintptr_t>(&GetRequirementsText));
-				jmp(rax);
-			}
+				Xbyak::Label funcLbl;
+
+				jmp(ptr[rip + funcLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+			};
 		};
 
-		Patch patch{};
+		Patch patch{ reinterpret_cast<std::uintptr_t>(&GetRequirementsText) };
 		patch.ready();
 
+		REL::safe_fill(hook.address(), REL::NOP, 0x100);
 		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 

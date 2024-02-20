@@ -5,7 +5,7 @@ namespace CustomSkills
 	class Skill final
 	{
 	public:
-		float GetLevel() { return Level ? Level->value : 0.0f; }
+		float GetLevel() const { return Level ? Level->value : 0.0f; }
 
 		bool UpdateColor()
 		{
@@ -38,9 +38,9 @@ namespace CustomSkills
 			}
 		}
 
-		RE::BSFixedString Name;
-		RE::BSFixedString Description;
-		RE::BSFixedString Skydome;
+		std::string Name;
+		std::string Description;
+		std::string Skydome;
 		RE::TESGlobal* Level = nullptr;
 		RE::TESGlobal* Ratio = nullptr;
 		RE::TESGlobal* ShowLevelup = nullptr;
@@ -51,7 +51,7 @@ namespace CustomSkills
 		RE::TESGlobal* DebugReload = nullptr;
 		bool NormalNif = false;
 		RE::BGSSkillPerkTreeNode* SkillTree = nullptr;
-		RE::BSFixedString ColorStr;
+		std::string ColorStr;
 		std::int32_t ColorLast = -1;
 	};
 }

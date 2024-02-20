@@ -43,21 +43,28 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t a_funcAddr) : Xbyak::CodeGenerator(0x17)
 			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retn;
+
 				mov(ecx, eax);
-				mov(rax,
-					reinterpret_cast<std::uintptr_t>(
-						&CustomSkillsManager::GetSkillProgressPercent));
-				call(rax);
-				nop(0x9);
+				call(ptr[rip + funcLbl]);
+				jmp(retn);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retn);
 			}
 		};
 
-		Patch patch{};
+		Patch patch{ reinterpret_cast<std::uintptr_t>(
+			&CustomSkillsManager::GetSkillProgressPercent) };
 		patch.ready();
-		assert(patch.getSize() == 0x17);
+		assert(patch.getSize() <= 0x17);
 
+		REL::safe_fill(hook.address(), REL::NOP, 0x17);
 		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
@@ -122,20 +129,29 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch(std::uintptr_t a_hookAddr)
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
 			{
-				mov(rax, reinterpret_cast<std::uintptr_t>(GetSkillName));
-				call(rax);
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
 
-				jmp(ptr[rip]);
-				dq(a_hookAddr + 0xA);
+				call(ptr[rip + funcLbl]);
+				jmp(ptr[rip + retnLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
 			}
 		};
 
-		auto patch = new Patch(hook.address());
+		auto patch = new Patch(
+			reinterpret_cast<std::uintptr_t>(GetSkillName),
+			hook.address() + 0xA);
 		patch->ready();
 
 		auto& trampoline = SKSE::GetTrampoline();
+		REL::safe_fill(hook.address(), REL::NOP, 0xA);
 		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 }

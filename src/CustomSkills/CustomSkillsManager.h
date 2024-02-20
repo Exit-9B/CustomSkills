@@ -29,6 +29,8 @@ namespace CustomSkills
 
 		static bool IsStatsMenuOpen();
 
+		static std::uint32_t GetCurrentSkillCount();
+
 		static std::uint32_t GetCurrentPerkPoints();
 
 		static void SetCurrentPerkPoints(std::uint8_t a_value);
@@ -47,7 +49,7 @@ namespace CustomSkills
 
 		static float GetBaseSkillLevel(RE::ActorValue a_skill);
 
-		static std::shared_ptr<Skill> FindSkill(const RE::BSFixedString& a_key);
+		static std::shared_ptr<Skill> FindSkill(const std::string& a_key);
 
 		static std::shared_ptr<Skill> FindSkillFromGlobalLevel(RE::TESGlobal* a_global);
 
@@ -68,7 +70,7 @@ namespace CustomSkills
 		inline static std::uint32_t _originalSkillTreeWidth = 3;
 
 		inline static std::vector<std::shared_ptr<Skill>> _skills;
-		inline static RE::BSTHashMap<RE::BSFixedString, std::shared_ptr<Skill>> _skillIds;
+		inline static std::map<std::string, std::shared_ptr<Skill>, util::iless> _skillIds;
 
 		inline static std::shared_ptr<Skill> _menuSkill = nullptr;
 		inline static MenuState _menuState = MenuState::None;
