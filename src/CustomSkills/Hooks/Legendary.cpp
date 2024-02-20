@@ -274,7 +274,7 @@ namespace CustomSkills
 			}
 		};
 
-		REL::safe_fill(hook.address(), REL::NOP, 0x20);
+		REL::safe_fill(hook.address(), REL::INT3, 0x20);
 		util::write_14branch(hook.address(), IsLegendaryAvailable);
 	}
 

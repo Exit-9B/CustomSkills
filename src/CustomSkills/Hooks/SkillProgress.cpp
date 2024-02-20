@@ -64,7 +64,7 @@ namespace CustomSkills
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::PlayerSkills::GetSkillProgress);
 
-		REL::safe_fill(hook.address(), REL::NOP, 0x50);
+		REL::safe_fill(hook.address(), REL::INT3, 0x50);
 		util::write_14branch(hook.address(), &GetSkillProgress);
 	}
 
@@ -184,7 +184,7 @@ namespace CustomSkills
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::BGSPerk::GetRequirementsText);
 
-		REL::safe_fill(hook.address(), REL::NOP, 0x100);
+		REL::safe_fill(hook.address(), REL::INT3, 0x100);
 		util::write_14branch(hook.address(), &GetRequirementsText);
 	}
 
