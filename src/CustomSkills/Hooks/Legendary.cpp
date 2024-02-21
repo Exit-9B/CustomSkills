@@ -140,8 +140,8 @@ namespace CustomSkills
 			}
 		};
 
-		REL::safe_fill(hook.address() + 0x5, REL::NOP, 0xC);
 		auto& trampoline = SKSE::GetTrampoline();
+		REL::safe_fill(hook.address(), REL::NOP, 0x11);
 		_GetActorValue = trampoline.write_call<5>(hook.address(), GetActorValue);
 	}
 

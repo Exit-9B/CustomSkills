@@ -155,6 +155,7 @@ namespace CustomSkills
 		patch->ready();
 
 		auto& trampoline = SKSE::GetTrampoline();
+		REL::safe_fill(hook.address(), REL::NOP, 0x9);
 		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 
