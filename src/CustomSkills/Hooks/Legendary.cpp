@@ -134,9 +134,10 @@ namespace CustomSkills
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(
 			RE::Offset::LegendarySkillResetConfirmCallback::Run,
-			0x1C0);
+			0x1B9);
 
 		REL::make_pattern<
+			"48 8B 0D ?? ?? ?? ?? "
 			"48 81 C1 ?? 00 00 00 "
 			"48 8B 01 "
 			"8B 56 1C "
@@ -145,31 +146,30 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
+			Patch(std::uintptr_t a_funcAddr) : Xbyak::CodeGenerator(0x17)
 			{
 				Xbyak::Label funcLbl;
-				Xbyak::Label retnLbl;
+				Xbyak::Label retn;
 
 				mov(ecx, ptr[rsi + 0x1C]);
 				call(ptr[rip + funcLbl]);
-				jmp(ptr[rip + retnLbl]);
+				jmp(retn);
 
 				L(funcLbl);
 				dq(a_funcAddr);
 
-				L(retnLbl);
-				dq(a_retnAddr);
+				L(retn);
 			}
 		};
 
-		auto patch = new Patch(
-			reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel),
-			hook.address() + 0x10);
-		patch->ready();
+		Patch patch{
+			reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel)};
+		patch.ready();
 
-		auto& trampoline = SKSE::GetTrampoline();
-		REL::safe_fill(hook.address(), REL::NOP, 0x10);
-		trampoline.write_branch<6>(hook.address(), patch->getCode());
+		assert(patch.getSize() <= 0x17);
+
+		REL::safe_fill(hook.address(), REL::NOP, 0x17);
+		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
 	void Legendary::ResetSkillLevelPatch()
