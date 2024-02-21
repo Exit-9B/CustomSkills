@@ -85,34 +85,19 @@ namespace CustomSkills
 			return 0.0f;
 		};
 
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
-			{
-				Xbyak::Label funcLbl;
-				Xbyak::Label retnLbl;
-
-				mov(ecx, eax);
-				call(ptr[rip + funcLbl]);
-				jmp(ptr[rip + retnLbl]);
-
-				L(funcLbl);
-				dq(a_funcAddr);
-
-				L(retnLbl);
-				dq(a_retnAddr);
-			}
-		};
-
-		auto patch = new Patch{
-			reinterpret_cast<std::uintptr_t>(GetSkillLevelForLegendaryReset),
-			hook.address() + 0xC
-		};
-		patch->ready();
-
 		auto& trampoline = SKSE::GetTrampoline();
+
+		// Manual assembly here because xbyak won't wrap it with VirtualProtect
 		REL::safe_fill(hook.address(), REL::NOP, 0xC);
-		trampoline.write_branch<6>(hook.address(), patch->getCode());
+		std::uintptr_t loc = hook.address();
+
+		// mov ecx, eax
+		constexpr auto setArg1 = std::to_array<std::uint8_t>({ 0x89, 0xC1 });
+		REL::safe_write(loc, setArg1);
+		loc += setArg1.size();
+
+		// jmp [rip+offset]
+		trampoline.write_call<6>(loc, GetSkillLevelForLegendaryReset);
 	}
 
 	void Legendary::ProcessMessagePatch()
