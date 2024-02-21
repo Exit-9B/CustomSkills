@@ -324,6 +324,6 @@ namespace CustomSkills
 		bool modeOn = _menuState != MenuState::None && _menuSkill != nullptr;
 		*IsSingleSkillMode.get() = modeOn || IsBeastMode();
 		*IsUsingBeastNif.get() = modeOn ? !_menuSkill->NormalNif : IsBeastMode();
-		*ShouldHideLevel.get() = (modeOn && _menuSkill->Level == nullptr) || IsBeastMode();
+		*ShouldHideLevel.get() = modeOn ? _menuSkill->Level == nullptr : IsBeastMode();
 	}
 }

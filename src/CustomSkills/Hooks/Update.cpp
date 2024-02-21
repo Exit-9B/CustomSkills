@@ -80,31 +80,9 @@ namespace CustomSkills
 			CustomSkillsManager::SetBeastMode(false);
 		};
 
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
-			{
-				Xbyak::Label funcLbl;
-				Xbyak::Label retnLbl;
-
-				call(ptr[rip + funcLbl]);
-
-				jmp(ptr[rip + retnLbl]);
-
-				L(funcLbl);
-				dq(a_funcAddr);
-
-				L(retnLbl);
-				dq(a_retnAddr);
-			}
-		};
-
-		auto patch = new Patch(reinterpret_cast<std::uintptr_t>(ExitMode), hook.address() + 0x7);
-		patch->ready();
-
 		auto& trampoline = SKSE::GetTrampoline();
 		REL::safe_fill(hook.address(), REL::NOP, 0x7);
-		trampoline.write_branch<6>(hook.address(), patch->getCode());
+		trampoline.write_call<6>(hook.address(), ExitMode);
 	}
 
 	void Update::DoFrame(RE::Main* a_main)

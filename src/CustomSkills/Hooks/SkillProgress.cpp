@@ -24,31 +24,9 @@ namespace CustomSkills
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::GetPerkCount, 0xE1);
 		REL::make_pattern<"0F B6 80">().match_or_fail(hook.address());
 
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
-			{
-				Xbyak::Label funcLbl;
-				Xbyak::Label retnLbl;
-
-				call(ptr[rip + funcLbl]);
-				jmp(ptr[rip + retnLbl]);
-
-				L(funcLbl);
-				dq(a_funcAddr);
-
-				L(retnLbl);
-				dq(a_retnAddr);
-			}
-		};
-
-		auto patch = new Patch(
-			reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetCurrentPerkPoints),
-			hook.address() + 0x7);
-		patch->ready();
-
 		auto& trampoline = SKSE::GetTrampoline();
-		trampoline.write_branch<6>(hook.address(), patch->getCode());
+		REL::safe_fill(hook.address(), REL::NOP, 0x7);
+		trampoline.write_call<6>(hook.address(), &CustomSkillsManager::GetCurrentPerkPoints);
 	}
 
 	void SkillProgress::SelectPerkPatch()
