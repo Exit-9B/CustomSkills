@@ -24,6 +24,7 @@ namespace CustomSkills
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::GetPerkCount, 0xE1);
 		REL::make_pattern<"0F B6 80">().match_or_fail(hook.address());
 
+		// TRAMPOLINE: 8
 		auto& trampoline = SKSE::GetTrampoline();
 		REL::safe_fill(hook.address(), REL::NOP, 0x7);
 		trampoline.write_call<6>(hook.address(), &CustomSkillsManager::GetCurrentPerkPoints);
@@ -34,6 +35,7 @@ namespace CustomSkills
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::SelectPerk, 0x1CD);
 		REL::make_pattern<"E8">().match_or_fail(hook.address());
 
+		// TRAMPOLINE: 14
 		auto& trampoline = SKSE::GetTrampoline();
 		_ModifyPerkCount = trampoline.write_call<5>(hook.address(), &ModifyPerkCount);
 	}
@@ -148,6 +150,7 @@ namespace CustomSkills
 			reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel));
 		patch->ready();
 
+		// TRAMPOLINE: 8
 		auto& trampoline = SKSE::GetTrampoline();
 		REL::safe_fill(hook.address(), REL::NOP, 0x9);
 		trampoline.write_call<6>(hook.address(), patch->getCode());
@@ -199,16 +202,16 @@ namespace CustomSkills
 		float* a_levelThreshold,
 		std::uint32_t* a_legendary)
 	{
-		if (CustomSkillsManager::IsOurMenuMode()) {
-			if (CustomSkillsManager::_menuSkill->Level) {
-				*a_level = CustomSkillsManager::_menuSkill->Level->value;
+		if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_skill)) {
+			if (skill->Level) {
+				*a_level = skill->Level->value;
 			}
 			else {
 				*a_level = 1.0f;
 			}
 
-			if (CustomSkillsManager::_menuSkill->Ratio) {
-				*a_xp = CustomSkillsManager::_menuSkill->Ratio->value;
+			if (skill->Ratio) {
+				*a_xp = skill->Ratio->value;
 			}
 			else {
 				*a_xp = 0.0f;
@@ -217,9 +220,8 @@ namespace CustomSkills
 			*a_levelThreshold = 1.0f;
 
 			if (a_legendary) {
-				if (CustomSkillsManager::_menuSkill->Legendary) {
-					*a_legendary = static_cast<std::uint32_t>(
-						CustomSkillsManager::_menuSkill->Legendary->value);
+				if (skill->Legendary) {
+					*a_legendary = static_cast<std::uint32_t>(skill->Legendary->value);
 				}
 				else {
 					*a_legendary = 0;

@@ -63,31 +63,8 @@ namespace util
 		}
 	};
 
-	inline bool starts_with(const std::string& a_str, const std::string& a_subStr)
-	{
-		return a_str.rfind(a_subStr, 0) == 0;
-	}
-
-	inline bool ends_with(const std::string& a_str, const std::string& a_subStr)
-	{
-		if (a_str.length() < a_subStr.length()) {
-			return false;
-		}
-
-		return a_str.compare(a_str.length() - a_subStr.length(), a_subStr.length(), a_subStr) == 0;
-	}
-
-	inline std::string toupper(std::string s)
-	{
-		std::ranges::transform(
-			s,
-			s.begin(),
-			[](unsigned char c)
-			{
-				return static_cast<char>(std::toupper(c));
-			});
-		return s;
-	}
+	template <typename T, typename Allocator = std::allocator<std::pair<const std::string, T>>>
+	using istring_map = std::map<std::string, T, iless, Allocator>;
 }
 
 #define DLLEXPORT __declspec(dllexport)

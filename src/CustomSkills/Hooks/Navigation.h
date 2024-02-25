@@ -8,13 +8,10 @@ namespace CustomSkills
 		static void WriteHooks();
 
 	private:
-		// Don't allow left right tree switching
-		static void NavigatePatch();
-
-		// Don't remember last selected tree
-		static void CloseMenuPatch();
-
-		// No horizontal velocity
+		// Prevent tree switching
 		static void RotatePatch();
+
+		// Prevent fading of constellation image
+		static void EffectShaderPatch();
 	};
 }

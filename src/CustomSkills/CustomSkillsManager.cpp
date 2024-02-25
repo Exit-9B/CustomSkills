@@ -10,21 +10,31 @@ namespace CustomSkills
 {
 	void CustomSkillsManager::Initialize()
 	{
+		// TRAMPOLINE: 6
 		auto& trampoline = SKSE::GetTrampoline();
 		IsSingleSkillMode = reinterpret_cast<std::uintptr_t>(trampoline.allocate(1));
-		IsUsingBeastNif = reinterpret_cast<std::uintptr_t>(trampoline.allocate(1));
 		ShouldHideLevel = reinterpret_cast<std::uintptr_t>(trampoline.allocate(1));
+		CameraRightPoint = reinterpret_cast<std::uintptr_t>(trampoline.allocate(4));
 		UpdateVars();
 	}
 
 	void CustomSkillsManager::LoadSkills()
 	{
-		_skillIds = Settings::ReadSkills();
+		_groupIds = Settings::ReadSkills();
+		_skillIds.clear();
+		_requirementSkills.clear();
 
-		_skills.clear();
+		for (const auto& [key, group] : _groupIds) {
+			for (std::size_t i = 0; i < group->Skills.size(); ++i) {
+				const auto& skill = group->Skills[i];
 
-		for (auto& [key, skill] : _skillIds) {
-			_skills.push_back(skill);
+				const auto& id = !skill->ID.empty() ? skill->ID : key;
+				_skillIds.emplace(id, std::make_pair(group, i));
+
+				if (skill->Level && skill->Level->type == RE::TESGlobal::Type::kShort) {
+					_requirementSkills.emplace(skill->Level, skill);
+				}
+			}
 		}
 	}
 
@@ -50,40 +60,19 @@ namespace CustomSkills
 
 	void CustomSkillsManager::CloseStatsMenu()
 	{
-		if (auto uiMessageQueue = RE::UIMessageQueue::GetSingleton()) {
+		if (const auto uiMessageQueue = RE::UIMessageQueue::GetSingleton()) {
 			SetMenuState(MenuState::WaitingToClose);
-			uiMessageQueue->AddMessage(MENU_NAME, RE::UI_MESSAGE_TYPE::kHide, nullptr);
+			uiMessageQueue
+				->AddMessage(RE::StatsMenu::MENU_NAME, RE::UI_MESSAGE_TYPE::kHide, nullptr);
 		}
 	}
 
-	void CustomSkillsManager::OpenStatsMenu(std::shared_ptr<Skill> a_skill)
+	void CustomSkillsManager::OpenStatsMenu(std::shared_ptr<SkillGroup> a_group)
 	{
-		_menuSkill = a_skill;
+		_menuSkills = a_group;
 
-		if (!_menuSkill || !_menuSkill->SkillTree) {
+		if (!_menuSkills || _menuSkills->Skills.empty()) {
 			return;
-		}
-
-		auto av = Game::GetActorValueInfo(MENU_AV);
-		if (!av) {
-			return;
-		}
-
-		auto pt = av->perkTree;
-		if (!pt) {
-			return;
-		}
-
-		if (!_originalSkillTree) {
-			_originalSkillTree = pt;
-			_originalSkillTreeWidth = av->perkTreeWidth;
-		}
-
-		auto nt = _menuSkill->SkillTree;
-		if (nt != pt) {
-			av->perkTree = nt;
-			// Vanilla Enchanting value for backwards compatibility
-			av->perkTreeWidth = 3;
 		}
 
 		SetMenuState(MenuState::WaitingToOpen);
@@ -99,13 +88,13 @@ namespace CustomSkills
 
 	bool CustomSkillsManager::IsStatsMenuOpen()
 	{
-		return RE::UI::GetSingleton()->IsMenuOpen(MENU_NAME);
+		return RE::UI::GetSingleton()->IsMenuOpen(RE::StatsMenu::MENU_NAME);
 	}
 
 	std::uint32_t CustomSkillsManager::GetCurrentSkillCount()
 	{
 		if (IsOurMenuMode()) {
-			return 1;
+			return static_cast<std::uint32_t>(_menuSkills->Skills.size());
 		}
 		else if (IsBeastMode()) {
 			return 1;
@@ -118,9 +107,9 @@ namespace CustomSkills
 	std::uint32_t CustomSkillsManager::GetCurrentPerkPoints()
 	{
 		if (IsOurMenuMode()) {
-			if (_menuSkill && _menuSkill->PerkPoints) {
+			if (_menuSkills && _menuSkills->PerkPoints) {
 
-				auto v = _menuSkill->PerkPoints->value;
+				auto v = _menuSkills->PerkPoints->value;
 
 				if (v <= 0) {
 					return 0;
@@ -144,13 +133,13 @@ namespace CustomSkills
 	void CustomSkillsManager::SetCurrentPerkPoints(std::uint8_t a_value)
 	{
 		if (IsOurMenuMode()) {
-			if (_menuSkill && _menuSkill->PerkPoints) {
-				_menuSkill->PerkPoints->value = a_value;
+			if (_menuSkills && _menuSkills->PerkPoints) {
+				_menuSkills->PerkPoints->value = a_value;
 				return;
 			}
 		}
 
-		if (auto player = RE::PlayerCharacter::GetSingleton()) {
+		if (const auto player = RE::PlayerCharacter::GetSingleton()) {
 			player->perkCount = a_value;
 		}
 	}
@@ -170,7 +159,7 @@ namespace CustomSkills
 
 	bool CustomSkillsManager::IsOurMenuMode()
 	{
-		return _menuState != MenuState::None && _menuSkill != nullptr;
+		return _menuState != MenuState::None && _menuSkills != nullptr;
 	}
 
 	bool CustomSkillsManager::IsBeastMode()
@@ -181,8 +170,8 @@ namespace CustomSkills
 
 	float CustomSkillsManager::GetSkillLevel(RE::ActorValue a_skill)
 	{
-		if (IsOurMenuMode()) {
-			return _menuSkill->GetLevel();
+		if (const auto skill = GetCurrentSkill(a_skill)) {
+			return skill->GetLevel();
 		}
 
 		const auto playerCharacter = RE::PlayerCharacter::GetSingleton();
@@ -191,8 +180,8 @@ namespace CustomSkills
 
 	float CustomSkillsManager::GetSkillProgressPercent(RE::ActorValue a_skill)
 	{
-		if (IsOurMenuMode()) {
-			return _menuSkill->Ratio ? _menuSkill->Ratio->value * 100.0f : 0.0f;
+		if (const auto skill = GetCurrentSkill(a_skill)) {
+			return skill->Ratio ? skill->Ratio->value * 100.0f : 0.0f;
 		}
 
 		// WerewolfPerks / VampirePerks store skill progress
@@ -202,8 +191,8 @@ namespace CustomSkills
 
 	float CustomSkillsManager::GetBaseSkillLevel(RE::ActorValue a_skill)
 	{
-		if (IsOurMenuMode()) {
-			return _menuSkill->GetLevel();
+		if (const auto skill = GetCurrentSkill(a_skill)) {
+			return skill->GetLevel();
 		}
 
 		const auto playerCharacter = RE::PlayerCharacter::GetSingleton();
@@ -212,7 +201,17 @@ namespace CustomSkills
 
 	std::shared_ptr<Skill> CustomSkillsManager::FindSkill(const std::string& a_key)
 	{
-		if (auto i = _skillIds.find(a_key); i != _skillIds.end()) {
+		if (const auto i = _skillIds.find(a_key); i != _skillIds.end()) {
+			const auto& [group, index] = i->second;
+			return group->Skills[index];
+		}
+
+		return nullptr;
+	}
+
+	std::shared_ptr<SkillGroup> CustomSkillsManager::FindSkillMenu(const std::string& a_key)
+	{
+		if (const auto i = _groupIds.find(a_key); i != _groupIds.end()) {
 			return i->second;
 		}
 
@@ -221,12 +220,17 @@ namespace CustomSkills
 
 	std::shared_ptr<Skill> CustomSkillsManager::FindSkillFromGlobalLevel(RE::TESGlobal* a_global)
 	{
-		for (auto& sk : _skills) {
-			if (sk->Level && sk->Level->type == RE::TESGlobal::Type::kShort) {
-				if (sk->Level == a_global) {
-					return sk;
-				}
-			}
+		const auto it = _requirementSkills.find(a_global);
+		return it != _requirementSkills.end() ? it->second : nullptr;
+	}
+
+	std::shared_ptr<Skill> CustomSkillsManager::GetCurrentSkill(RE::ActorValue a_value)
+	{
+		const std::uint32_t index = util::to_underlying(a_value) -
+			util::to_underlying(RE::ActorValue::kTotal);
+
+		if (_menuSkills && index < _menuSkills->Skills.size()) {
+			return _menuSkills->Skills[index];
 		}
 
 		return nullptr;
@@ -245,33 +249,35 @@ namespace CustomSkills
 		}
 
 		bool reload = false;
-		for (auto& sk : _skills) {
-			if (sk->OpenMenu) {
-				auto amt = static_cast<std::int16_t>(sk->OpenMenu->value);
+		for (const auto& [key, group] : _groupIds) {
+			if (group->OpenMenu) {
+				const auto amt = static_cast<std::int16_t>(group->OpenMenu->value);
 				if (amt > 0) {
-					sk->OpenMenu->value = 0;
+					group->OpenMenu->value = 0;
 
-					OpenStatsMenu(sk);
+					OpenStatsMenu(group);
 					return;
 				}
 			}
 
-			if (sk->ShowLevelup) {
-				auto amt = static_cast<std::int16_t>(sk->ShowLevelup->value);
-				if (amt > 0) {
-					sk->ShowLevelup->value = 0;
-
-					ShowLevelup(sk->Name, amt);
-					return;
-				}
-			}
-
-			if (sk->DebugReload) {
-				if (sk->DebugReload->value > 0) {
-					sk->DebugReload->value = 0;
+			if (group->DebugReload) {
+				if (group->DebugReload->value > 0) {
+					group->DebugReload->value = 0;
 
 					reload = true;
 					break;
+				}
+			}
+
+			for (const auto& sk : group->Skills) {
+				if (sk->ShowLevelup) {
+					const auto amt = static_cast<std::int16_t>(sk->ShowLevelup->value);
+					if (amt > 0) {
+						sk->ShowLevelup->value = 0;
+
+						ShowLevelup(sk->GetName(), amt);
+						return;
+					}
 				}
 			}
 		}
@@ -308,22 +314,22 @@ namespace CustomSkills
 			}
 			break;
 		}
-
-		if (closed) {
-			if (_originalSkillTree) {
-				if (auto av = Game::GetActorValueInfo(MENU_AV)) {
-					av->perkTree = _originalSkillTree;
-					av->perkTreeWidth = _originalSkillTreeWidth;
-				}
-			}
-		}
 	}
 
 	void CustomSkillsManager::UpdateVars()
 	{
-		bool modeOn = _menuState != MenuState::None && _menuSkill != nullptr;
-		*IsSingleSkillMode.get() = modeOn || IsBeastMode();
-		*IsUsingBeastNif.get() = modeOn ? !_menuSkill->NormalNif : IsBeastMode();
-		*ShouldHideLevel.get() = modeOn ? _menuSkill->Level == nullptr : IsBeastMode();
+		const bool modeOn = _menuState != MenuState::None && _menuSkills != nullptr;
+		if (modeOn) {
+			*IsSingleSkillMode = _menuSkills->Skills.size() <= 1;
+			*ShouldHideLevel = _menuSkills->Skills.size() == 1 &&
+				_menuSkills->Skills[0]->Level == nullptr;
+			*CameraRightPoint = _menuSkills->CameraRightPoint;
+		}
+		else {
+			const bool beastMode = IsBeastMode();
+			*IsSingleSkillMode = beastMode;
+			*ShouldHideLevel = beastMode;
+			*CameraRightPoint = beastMode ? 2 : 1;
+		}
 	}
 }

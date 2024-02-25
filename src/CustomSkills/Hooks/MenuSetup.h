@@ -23,7 +23,10 @@ namespace CustomSkills
 		// Update data for only one skill
 		static void UpdateSkillPatch();
 
-		// Create perk nodes for only one skill
-		static void CreateStarsPatch();
+		// Get custom skill tree
+		static void SkillTreePatch();
+
+		// Save last selected tree
+		static void CloseMenuPatch();
 	};
 }

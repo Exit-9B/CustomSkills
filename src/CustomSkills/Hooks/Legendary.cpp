@@ -15,8 +15,22 @@ namespace CustomSkills
 		LegendarySkillConfirmPatch();
 		ResetSkillLevelPatch();
 		PlayerSkillsPatch();
-		LegendaryAvailablePatch();
 		RefundPerksPatch();
+	}
+
+	static float GetSkillLevelForLegendaryReset(RE::ActorValue a_skill)
+	{
+		if (auto skill = CustomSkillsManager::GetCurrentSkill(a_skill)) {
+			if (skill->Level && skill->Legendary) {
+				return skill->Level->value;
+			}
+		}
+
+		if (const auto playerCharacter = RE::PlayerCharacter::GetSingleton()) {
+			playerCharacter->GetBaseActorValue(a_skill);
+		}
+
+		return 0.0f;
 	}
 
 	void Legendary::LegendaryHintPatch()
@@ -49,7 +63,7 @@ namespace CustomSkills
 			}
 		};
 
-		Patch patch{ reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel) };
+		Patch patch{ reinterpret_cast<std::uintptr_t>(&GetSkillLevelForLegendaryReset) };
 		patch.ready();
 
 		assert(patch.getSize() <= 0x17);
@@ -68,23 +82,7 @@ namespace CustomSkills
 			"FF 53 18">()
 			.match_or_fail(hook.address());
 
-		static auto GetSkillLevelForLegendaryReset = +[](RE::ActorValue a_actorValue) -> float
-		{
-			if (CustomSkillsManager::IsOurMenuMode()) {
-				if (CustomSkillsManager::_menuSkill->Level &&
-					CustomSkillsManager::_menuSkill->Legendary) {
-					return CustomSkillsManager::_menuSkill->Level->value;
-				}
-			}
-			else {
-				if (const auto player = RE::PlayerCharacter::GetSingleton()) {
-					return player->GetBaseActorValue(a_actorValue);
-				}
-			}
-
-			return 0.0f;
-		};
-
+		// TRAMPOLINE: 8
 		auto& trampoline = SKSE::GetTrampoline();
 
 		// Manual assembly here because xbyak won't wrap it with VirtualProtect
@@ -97,7 +95,7 @@ namespace CustomSkills
 		loc += setArg1.size();
 
 		// jmp [rip+offset]
-		trampoline.write_call<6>(loc, GetSkillLevelForLegendaryReset);
+		trampoline.write_call<6>(loc, &GetSkillLevelForLegendaryReset);
 	}
 
 	void Legendary::ProcessMessagePatch()
@@ -117,7 +115,13 @@ namespace CustomSkills
 		auto GetActorValue = +[](RE::StatsMenu* a_menu, std::uint32_t a_selectedIndex) -> float
 		{
 			if (CustomSkillsManager::IsOurMenuMode()) {
-				return CustomSkillsManager::_menuSkill->GetLevel();
+				if (a_selectedIndex < a_menu->skillTrees.size()) {
+					const RE::ActorValue value = a_menu->skillTrees[a_selectedIndex];
+					if (auto skill = CustomSkillsManager::GetCurrentSkill(value)) {
+						return skill->GetLevel();
+					}
+				}
+				return 0.0f;
 			}
 			else {
 				auto actorValue = _GetActorValue(a_menu, a_selectedIndex);
@@ -125,6 +129,7 @@ namespace CustomSkills
 			}
 		};
 
+		// TRAMPOLINE: 14
 		auto& trampoline = SKSE::GetTrampoline();
 		REL::safe_fill(hook.address(), REL::NOP, 0x11);
 		_GetActorValue = trampoline.write_call<5>(hook.address(), GetActorValue);
@@ -162,8 +167,7 @@ namespace CustomSkills
 			}
 		};
 
-		Patch patch{
-			reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel)};
+		Patch patch{ reinterpret_cast<std::uintptr_t>(&GetSkillLevelForLegendaryReset) };
 		patch.ready();
 
 		assert(patch.getSize() <= 0x17);
@@ -183,8 +187,8 @@ namespace CustomSkills
 		static auto LegendaryReset =
 			+[](RE::ActorValueOwner* a_avOwner, RE::ActorValue a_skill, float a_resetValue)
 		{
-			if (CustomSkillsManager::IsOurMenuMode()) {
-				CustomSkillsManager::_menuSkill->LegendaryReset(a_resetValue);
+			if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_skill)) {
+				skill->LegendaryReset(a_resetValue);
 			}
 			else {
 				a_avOwner->SetBaseActorValue(a_skill, a_resetValue);
@@ -208,6 +212,7 @@ namespace CustomSkills
 		auto patch = new Patch(reinterpret_cast<std::uintptr_t>(LegendaryReset));
 		patch->ready();
 
+		// TRAMPOLINE: 8
 		auto& trampoline = SKSE::GetTrampoline();
 		trampoline.write_call<6>(hook.address(), patch->getCode());
 	}
@@ -230,37 +235,9 @@ namespace CustomSkills
 			}
 		};
 
+		// TRAMPOLINE: 14
 		auto& trampoline = SKSE::GetTrampoline();
 		_MakeLegendary = trampoline.write_call<5>(hook.address(), MakeLegendary);
-	}
-
-	void Legendary::LegendaryAvailablePatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::IsLegendaryDifficultyAvailable);
-
-		REL::make_pattern<"83 3D">().match_or_fail(hook.address());
-
-		static auto IsLegendaryAvailable = +[]()
-		{
-			// Yes, the game does this
-			static auto
-				iDifficultyLevelMax = RE::GameSettingCollection::GetSingleton()->GetSetting(
-					"iDifficultyLevelMax");
-
-			if (!iDifficultyLevelMax || iDifficultyLevelMax->GetSInt() < 5) {
-				return false;
-			}
-
-			if (CustomSkillsManager::IsOurMenuMode()) {
-				return CustomSkillsManager::_menuSkill->Legendary != nullptr;
-			}
-			else {
-				return true;
-			}
-		};
-
-		REL::safe_fill(hook.address(), REL::INT3, 0x20);
-		util::write_14branch(hook.address(), IsLegendaryAvailable);
 	}
 
 	void Legendary::RefundPerksPatch()
@@ -308,6 +285,7 @@ namespace CustomSkills
 			hook.address() + 0x7);
 		patch->ready();
 
+		// TRAMPOLINE: 8
 		auto& trampoline = SKSE::GetTrampoline();
 		REL::safe_fill(hook.address(), REL::NOP, 0x7);
 		trampoline.write_branch<6>(hook.address(), patch->getCode());

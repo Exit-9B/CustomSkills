@@ -5,6 +5,11 @@ namespace CustomSkills
 	class Skill final
 	{
 	public:
+		std::string_view GetName() const
+		{
+			return Info ? std::string_view(Info->fullName) : ""sv;
+		}
+
 		float GetLevel() const { return Level ? Level->value : 0.0f; }
 
 		bool UpdateColor()
@@ -38,20 +43,28 @@ namespace CustomSkills
 			}
 		}
 
-		std::string Name;
+		std::string ID;
 		std::string Description;
-		std::string Skydome;
 		RE::TESGlobal* Level = nullptr;
 		RE::TESGlobal* Ratio = nullptr;
 		RE::TESGlobal* ShowLevelup = nullptr;
-		RE::TESGlobal* OpenMenu = nullptr;
-		RE::TESGlobal* PerkPoints = nullptr;
 		RE::TESGlobal* Legendary = nullptr;
 		RE::TESGlobal* Color = nullptr;
-		RE::TESGlobal* DebugReload = nullptr;
-		bool NormalNif = false;
-		RE::BGSSkillPerkTreeNode* SkillTree = nullptr;
+		RE::ActorValueInfo* Info = nullptr;
+		std::uint32_t SkillTreeWidth = 3;
 		std::string ColorStr;
 		std::int32_t ColorLast = -1;
+	};
+
+	class SkillGroup final
+	{
+	public:
+		std::string Skydome;
+		std::uint32_t CameraRightPoint = 2;
+		std::uint32_t LastSelectedTree = 0;
+		RE::TESGlobal* OpenMenu = nullptr;
+		RE::TESGlobal* PerkPoints = nullptr;
+		RE::TESGlobal* DebugReload = nullptr;
+		std::vector<std::shared_ptr<Skill>> Skills;
 	};
 }

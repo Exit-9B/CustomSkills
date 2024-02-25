@@ -3,38 +3,31 @@
 #include "TreeNode.h"
 
 #include <SimpleIni.h>
+#include <json/json.h>
 
 namespace CustomSkills
 {
-	auto Settings::ReadSkills() -> std::map<std::string, std::shared_ptr<Skill>, util::iless>
+	auto Settings::ReadSkills() -> util::istring_map<std::shared_ptr<SkillGroup>>
 	{
-		std::map<std::string, std::shared_ptr<Skill>, util::iless> skills;
+		util::istring_map<std::shared_ptr<SkillGroup>> skills;
 
-		auto dir = std::filesystem::path("Data/NetScriptFramework/Plugins");
+		auto dir = std::filesystem::path("Data/SKSE/Plugins/CustomSkills");
 		std::error_code ec;
 		for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
 			if (!entry.is_regular_file()) {
 				continue;
 			}
 
-			auto filename = entry.path().filename().string();
+			auto filename = entry.path().filename();
 
-			if (!util::starts_with(util::toupper(filename), "CUSTOMSKILL."s)) {
+			if (::_wcsicmp(filename.extension().c_str(), L".json") != 0) {
 				continue;
 			}
 
-			if (!util::ends_with(util::toupper(filename), ".CONFIG.TXT"s)) {
-				continue;
-			}
+			std::string key = filename.stem().string();
 
-			std::string key = filename.substr(12);
-			key = key.substr(0, key.length() - 11);
-
-			if (key.empty())
-				continue;
-
-			if (auto sk = ReadSkill(entry.path())) {
-				skills.insert({ std::move(key), sk });
+			if (const auto sk = ReadSkill(entry.path())) {
+				skills.emplace(std::move(key), std::move(sk));
 			}
 		}
 
@@ -42,12 +35,256 @@ namespace CustomSkills
 			logger::error("Error reading skill configs: {}", ec.message());
 		}
 
+		dir = std::filesystem::path("Data/NetScriptFramework/Plugins");
+		ec = {};
+		for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
+			if (!entry.is_regular_file()) {
+				continue;
+			}
+
+			auto filename = entry.path().filename();
+
+			if (::_wcsnicmp(filename.c_str(), L"CustomSkill.", 12) != 0) {
+				continue;
+			}
+
+			if (::_wcsicmp(filename.extension().c_str(), L".txt") != 0 ||
+				::_wcsicmp(filename.stem().extension().c_str(), L".config") != 0) {
+				continue;
+			}
+
+			std::string key = filename.stem().stem().string().substr(12);
+
+			if (key.empty())
+				continue;
+
+			if (const auto sk = ReadLegacySkill(entry.path())) {
+				skills.emplace(std::move(key), std::move(sk));
+			}
+		}
+
+		if (ec) {
+			logger::error("Error reading legacy skill configs: {}", ec.message());
+		}
+
 		return skills;
 	}
 
-	auto Settings::ReadSkill(const std::filesystem::path& a_file) -> std::shared_ptr<Skill>
+	static RE::BSResourceNiBinaryStream& operator>>(
+		RE::BSResourceNiBinaryStream& a_sin,
+		auto& a_root)
 	{
-		auto sk = std::make_unique<Skill>();
+		Json::CharReaderBuilder fact;
+		std::unique_ptr<Json::CharReader> const reader{ fact.newCharReader() };
+
+		const auto size = a_sin.stream->totalSize;
+		const auto buffer = std::make_unique<char[]>(size);
+		a_sin.read(buffer.get(), size);
+
+		const auto begin = buffer.get();
+		const auto end = begin + size;
+
+		std::string errs;
+		const bool ok = reader->parse(begin, end, &a_root, &errs);
+
+		if (!ok) {
+			throw std::runtime_error(errs);
+		}
+
+		return a_sin;
+	}
+
+	template <typename T>
+	static T* ParseForm(RE::TESDataHandler* dataHandler, const Json::Value& a_val)
+	{
+		std::istringstream ss{ a_val.asString() };
+		std::string file;
+		std::string id;
+
+		std::getline(ss, file, '|');
+		std::getline(ss, id);
+		RE::FormID rawFormID;
+		std::istringstream(id) >> std::hex >> rawFormID;
+
+		return dataHandler->LookupForm<T>(rawFormID, file);
+	};
+
+	auto Settings::ReadSkill(const std::filesystem::path& a_file) -> std::shared_ptr<SkillGroup>
+	{
+		const auto dataHandler = RE::TESDataHandler::GetSingleton();
+		if (!dataHandler)
+			return nullptr;
+
+		const auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::ActorValueInfo>();
+		if (!factory)
+			return nullptr;
+
+		RE::BSString defaultName;
+		RE::BSString defaultDescription;
+		const auto vampireTree = dataHandler->LookupForm<RE::ActorValueInfo>(0x646, "Skyrim.esm");
+		if (vampireTree) {
+			defaultName = vampireTree->GetFullName();
+			vampireTree->GetDescription(defaultDescription, nullptr);
+		}
+
+		RE::BSResourceNiBinaryStream fileStream{ a_file.string() };
+
+		if (!fileStream.good())
+			return nullptr;
+
+		Json::Value root;
+		try {
+			fileStream >> root;
+		}
+		catch (...) {
+			logger::error("Parse errors in file: {}", a_file.filename().string());
+		}
+
+		if (!root.isObject())
+			return nullptr;
+
+		auto&& group = std::make_shared<SkillGroup>();
+
+		if (const auto& skydome = root["skydome"]; skydome.isObject()) {
+			group->Skydome = skydome["model"].asString();
+			if (const auto& cameraRightPoint = skydome["cameraRightPoint"];
+				cameraRightPoint.isUInt()) {
+				group->CameraRightPoint = cameraRightPoint.asUInt();
+			}
+		}
+
+		if (group->Skydome.empty()) {
+			group->Skydome = "DLC01/Interface/INTVampirePerkSkydome.nif";
+		}
+
+		if (const auto& showMenu = root["showMenu"]; showMenu.isString()) {
+			group->OpenMenu = ParseForm<RE::TESGlobal>(dataHandler, showMenu);
+		}
+
+		if (const auto& debugReload = root["debugReload"]; debugReload.isString()) {
+			group->DebugReload = ParseForm<RE::TESGlobal>(dataHandler, debugReload);
+		}
+
+		if (const auto& perkPoints = root["perkPoints"]; perkPoints.isString()) {
+			group->PerkPoints = ParseForm<RE::TESGlobal>(dataHandler, perkPoints);
+		}
+
+		if (const auto& skills = root["skills"]; skills.isArray()) {
+			for (const auto& skill : skills) {
+				const auto& sk = group->Skills.emplace_back(std::make_shared<Skill>());
+				sk->Info = factory->Create();
+
+				if (const auto& id = skill["id"]; id.isString()) {
+					sk->ID = id.asString();
+				}
+
+				if (const auto& name = skill["name"]; name.isString()) {
+					std::string tr = name.asString();
+					SKSE::Translation::Translate(tr, tr);
+					sk->Info->fullName = tr;
+				}
+				else {
+					sk->Info->fullName = defaultName;
+				}
+
+				if (const auto& description = skill["description"]; description.isString()) {
+					std::string tr = description.asString();
+					SKSE::Translation::Translate(tr, tr);
+					sk->Description = std::move(tr);
+				}
+				else {
+					sk->Description = defaultDescription;
+				}
+
+				if (const auto& level = skill["level"]; level.isString()) {
+					sk->Level = ParseForm<RE::TESGlobal>(dataHandler, level);
+				}
+
+				if (const auto& ratio = skill["ratio"]; ratio.isString()) {
+					sk->Ratio = ParseForm<RE::TESGlobal>(dataHandler, ratio);
+				}
+
+				if (const auto& legendary = skill["legendary"]; legendary.isString()) {
+					sk->Legendary = ParseForm<RE::TESGlobal>(dataHandler, legendary);
+				}
+
+				if (const auto& color = skill["color"]; color.isString()) {
+					sk->Color = ParseForm<RE::TESGlobal>(dataHandler, color);
+				}
+
+				if (const auto& showLevelup = skill["showLevelup"]; showLevelup.isString()) {
+					sk->ShowLevelup = ParseForm<RE::TESGlobal>(dataHandler, showLevelup);
+				}
+
+				if (const auto& gridOffset = skill["gridOffset"]; gridOffset.isUInt()) {
+					sk->Info->perkTreeWidth = gridOffset.asUInt();
+				}
+
+				std::vector<std::shared_ptr<TreeNode>> tns;
+				if (const auto& nodes = skill["nodes"]; nodes.isArray()) {
+					std::map<std::string, std::int32_t> ids;
+
+					const std::int32_t size = (std::min)(128U, nodes.size());
+					for (std::int32_t i = 0; i < size; ++i) {
+						const auto& node = nodes[i];
+						if (const auto& id = node["id"]; id.isString()) {
+							ids.emplace(id.asString(), i);
+						}
+					}
+
+					for (std::int32_t i = 0; i < size; ++i) {
+						const auto& node = nodes[i];
+						const auto& tn = tns.emplace_back(std::make_shared<TreeNode>());
+						tn->Index = i;
+						if (const auto& perk = node["perk"]; perk.isString()) {
+							tn->Perk = ParseForm<RE::BGSPerk>(dataHandler, perk);
+						}
+						if (const auto& x = node["x"]; x.isNumeric()) {
+							tn->X = x.asFloat();
+						}
+						if (const auto& y = node["y"]; y.isNumeric()) {
+							tn->Y = y.asFloat();
+						}
+						if (const auto& gridX = node["gridX"]; gridX.isInt()) {
+							tn->GridX = gridX.asInt();
+						}
+						if (const auto& gridY = node["gridY"]; gridY.isInt()) {
+							tn->GridY = gridY.asInt();
+						}
+
+						if (const auto& links = node["links"]; links.isArray()) {
+							for (const auto& link : links) {
+								if (link.isInt()) {
+									tn->Links.push_back(link.asInt());
+								}
+								else if (link.isString()) {
+									tn->Links.push_back(ids[link.asString()]);
+								}
+							}
+						}
+					}
+				}
+
+				try {
+					sk->Info->perkTree = TreeNode::Create(tns, sk->Info);
+				}
+				catch (...) {
+					Error(
+						a_file,
+						"Something went wrong when creating skill perk tree! Make sure node 0 "
+						"exists and no missing nodes are referenced in links.");
+				}
+			}
+		}
+
+		return group;
+	}
+
+	auto Settings::ReadLegacySkill(const std::filesystem::path& a_file)
+		-> std::shared_ptr<SkillGroup>
+	{
+		auto group = std::make_shared<SkillGroup>();
+		const auto& sk = group->Skills.emplace_back(std::make_shared<Skill>());
 
 		::CSimpleIniA cv;
 		cv.SetUnicode();
@@ -65,6 +302,14 @@ namespace CustomSkills
 		};
 
 		const auto dataHandler = RE::TESDataHandler::GetSingleton();
+		if (!dataHandler)
+			return nullptr;
+
+		const auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::ActorValueInfo>();
+		sk->Info = factory ? factory->Create() : nullptr;
+		if (!sk->Info) {
+			return nullptr;
+		}
 
 		RE::BSString defaultName;
 		RE::BSString defaultDescription;
@@ -79,11 +324,12 @@ namespace CustomSkills
 		SKSE::Translation::Translate(name, name);
 		SKSE::Translation::Translate(description, description);
 
-		sk->Name = std::move(name);
+		sk->Info->fullName = name;
 		sk->Description = std::move(description);
 
-		sk->Skydome = GetStringValue("", "Skydome", "DLC01/Interface/INTVampirePerkSkydome.nif");
-		sk->NormalNif = cv.GetBoolValue("", "SkydomeNormalNif", false);
+		group
+			->Skydome = GetStringValue("", "Skydome", "DLC01/Interface/INTVampirePerkSkydome.nif");
+		group->CameraRightPoint = cv.GetBoolValue("", "SkydomeNormalNif", false) ? 1 : 2;
 
 		auto levelFile = GetStringValue("", "LevelFile", "");
 		auto levelId = cv.GetLongValue("", "LevelId", 0x0);
@@ -99,11 +345,11 @@ namespace CustomSkills
 
 		auto showMenuFile = GetStringValue("", "ShowMenuFile", "");
 		auto showMenuId = cv.GetLongValue("", "ShowMenuId", 0x0);
-		sk->OpenMenu = dataHandler->LookupForm<RE::TESGlobal>(showMenuId, showMenuFile);
+		group->OpenMenu = dataHandler->LookupForm<RE::TESGlobal>(showMenuId, showMenuFile);
 
 		auto perkPointsFile = GetStringValue("", "PerkPointsFile", "");
 		auto perkPointsId = cv.GetLongValue("", "PerkPointsId", 0x0);
-		sk->PerkPoints = dataHandler->LookupForm<RE::TESGlobal>(perkPointsId, perkPointsFile);
+		group->PerkPoints = dataHandler->LookupForm<RE::TESGlobal>(perkPointsId, perkPointsFile);
 
 		auto legendaryFile = GetStringValue("", "LegendaryFile", "");
 		auto legendaryId = cv.GetLongValue("", "LegendaryId", 0x0);
@@ -115,7 +361,8 @@ namespace CustomSkills
 
 		auto debugReloadFile = GetStringValue("", "DebugReloadFile", "");
 		auto debugReloadId = cv.GetLongValue("", "DebugReloadId", 0x0);
-		sk->DebugReload = dataHandler->LookupForm<RE::TESGlobal>(debugReloadId, debugReloadFile);
+		group
+			->DebugReload = dataHandler->LookupForm<RE::TESGlobal>(debugReloadId, debugReloadFile);
 
 		std::vector<std::shared_ptr<TreeNode>> nodes;
 		for (std::int32_t i = 0; i < MaxNodes; i++) {
@@ -124,10 +371,13 @@ namespace CustomSkills
 				continue;
 			}
 
-			auto tn = std::make_shared<TreeNode>();
+			auto& tn = nodes.emplace_back(std::make_shared<TreeNode>());
 			tn->Index = i;
-			tn->PerkFile = GetStringValue("", fmt::format("Node{}.PerkFile", i).c_str(), "");
-			tn->PerkId = cv.GetLongValue("", fmt::format("Node{}.PerkId", i).c_str(), 0x0);
+
+			auto perkFile = GetStringValue("", fmt::format("Node{}.PerkFile", i).c_str(), "");
+			auto perkId = cv.GetLongValue("", fmt::format("Node{}.PerkId", i).c_str(), 0x0);
+			tn->Perk = dataHandler->LookupForm<RE::BGSPerk>(perkId, perkFile);
+
 			tn->X = (float)cv.GetDoubleValue("", fmt::format("Node{}.X", i).c_str());
 			tn->Y = (float)cv.GetDoubleValue("", fmt::format("Node{}.Y", i).c_str());
 			tn->GridX = cv.GetLongValue("", fmt::format("Node{}.GridX", i).c_str());
@@ -155,12 +405,11 @@ namespace CustomSkills
 					}
 				}
 			}
-
-			nodes.push_back(tn);
 		}
 
 		try {
-			sk->SkillTree = TreeNode::Create(nodes);
+			sk->Info->perkTree = TreeNode::Create(nodes, sk->Info);
+			sk->Info->perkTreeWidth = 3;
 		}
 		catch (...) {
 			Error(
@@ -169,7 +418,7 @@ namespace CustomSkills
 				"no missing nodes are referenced in links.");
 		}
 
-		return sk;
+		return group;
 	}
 
 	void Settings::Error(const std::filesystem::path& a_file, std::string_view a_message)

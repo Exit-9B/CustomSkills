@@ -14,7 +14,6 @@ namespace CustomSkills
 		SkillNamePatch();
 		ZoomOutPatch();
 		PerkViewPatch();
-		PerkSkillNamePatch();
 	}
 
 	void BeastSkillInfo::BeastSkillPatch()
@@ -76,26 +75,28 @@ namespace CustomSkills
 
 		REL::make_pattern<"E8">().match_or_fail(hook.address());
 
-		using GetSkillName_t = const char*(std::uint32_t);
+		using GetSkillName_t = const char*(RE::ActorValue);
 		static REL::Relocation<GetSkillName_t> _GetSkillName;
 
-		auto GetSkillName = +[](std::uint32_t a_skill) -> const char*
+		auto GetSkillName = +[](RE::ActorValue a_skill) -> const char*
 		{
-			if (CustomSkillsManager::IsOurMenuMode()) {
-				if (!CustomSkillsManager::_menuSkill->Name.empty()) {
-					return CustomSkillsManager::_menuSkill->Name.c_str();
-				}
+			if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_skill)) {
+				return skill->GetName().data();
 			}
 			return _GetSkillName(a_skill);
 		};
 
+		// TRAMPOLINE: 14
 		auto& trampoline = SKSE::GetTrampoline();
 		_GetSkillName = trampoline.write_call<5>(hook.address(), GetSkillName);
 	}
 
 	void BeastSkillInfo::ZoomOutPatch()
 	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::Navigate, 0x5A6);
+		auto hook = REL::Relocation<std::uintptr_t>(
+			RE::Offset::StatsMenu::ProcessRotateEvent,
+			0x5A6);
+
 		util::write_disp(
 			hook.address() + 0x2,
 			hook.address() + 0x7,
@@ -111,24 +112,5 @@ namespace CustomSkills
 			hook.address() + 0x2,
 			hook.address() + 0x7,
 			CustomSkillsManager::ShouldHideLevel);
-	}
-
-	void BeastSkillInfo::PerkSkillNamePatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::SetSkillInfo, 0x10A0);
-		REL::make_pattern<"48 83 C1 20 48 8B 01 FF 50 28">().match_or_fail(hook.address());
-
-		static auto GetSkillName = +[](RE::ActorValueInfo* a_avInfo) -> const char*
-		{
-			if (CustomSkillsManager::IsOurMenuMode()) {
-				return CustomSkillsManager::_menuSkill->Name.c_str();
-			}
-
-			return a_avInfo->GetFullName();
-		};
-
-		auto& trampoline = SKSE::GetTrampoline();
-		REL::safe_fill(hook.address(), REL::NOP, 0xA);
-		trampoline.write_call<6>(hook.address(), GetSkillName);
 	}
 }

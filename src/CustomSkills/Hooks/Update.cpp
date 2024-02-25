@@ -16,6 +16,7 @@ namespace CustomSkills
 
 	void Update::FrameHook()
 	{
+		// TRAMPOLINE: 14
 		auto& trampoline = SKSE::GetTrampoline();
 
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::Main::OnIdle, 0x3E);
@@ -66,6 +67,7 @@ namespace CustomSkills
 			hook.address() + 0x6);
 		patch->ready();
 
+		// TRAMPOLINE: 8
 		auto& trampoline = SKSE::GetTrampoline();
 		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
@@ -80,6 +82,7 @@ namespace CustomSkills
 			CustomSkillsManager::SetBeastMode(false);
 		};
 
+		// TRAMPOLINE: 8
 		auto& trampoline = SKSE::GetTrampoline();
 		REL::safe_fill(hook.address(), REL::NOP, 0x7);
 		trampoline.write_call<6>(hook.address(), ExitMode);

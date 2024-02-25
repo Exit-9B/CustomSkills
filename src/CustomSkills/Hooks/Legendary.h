@@ -26,15 +26,7 @@ namespace CustomSkills
 		// Skip setting data in player skills struct
 		static void PlayerSkillsPatch();
 
-		// Check whether legendary should be available
-		static void LegendaryAvailablePatch();
-
 		// Refund perks to custom global variable
 		static void RefundPerksPatch();
-
-		static void LegendaryReset(
-			RE::ActorValueOwner* a_avOwner,
-			RE::ActorValue a_skill,
-			float a_resetValue);
 	};
 }

@@ -14,9 +14,6 @@ namespace CustomSkills
 		// Skill name color
 		static void SkillColorPatch();
 
-		// Skill name in perk description
-		static void PerkSkillNamePatch();
-
 		// Skill description
 		static void SkillDescriptionPatch();
 	};

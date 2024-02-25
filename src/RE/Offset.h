@@ -42,9 +42,9 @@ namespace RE
 			inline constexpr auto DtorImpl = REL::ID(52509);
 			inline constexpr auto GetPerkCount = REL::ID(52537);
 			inline constexpr auto ModifyPerkCount = REL::ID(52538);
-			inline constexpr auto Navigate = REL::ID(52532);
 			inline constexpr auto ProcessButton = REL::ID(52520);
 			inline constexpr auto ProcessMessage = REL::ID(52510);
+			inline constexpr auto ProcessRotateEvent = REL::ID(52532);
 			inline constexpr auto Rotate = REL::ID(52534);
 			inline constexpr auto SelectPerk = REL::ID(52521);
 			inline constexpr auto SelectStar = REL::ID(52542);

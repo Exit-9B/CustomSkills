@@ -22,8 +22,5 @@ namespace CustomSkills
 
 		// No skill level in perk description
 		static void PerkViewPatch();
-
-		// Skill name in perk description
-		static void PerkSkillNamePatch();
 	};
 }
