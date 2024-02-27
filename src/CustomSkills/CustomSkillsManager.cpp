@@ -27,6 +27,8 @@ namespace CustomSkills
 		for (const auto& [key, group] : _groupIds) {
 			for (std::size_t i = 0; i < group->Skills.size(); ++i) {
 				const auto& skill = group->Skills[i];
+				if (!skill)
+					continue;
 
 				const auto& id = !skill->ID.empty() ? skill->ID : key;
 				_skillIds.emplace(id, std::make_pair(group, i));
@@ -250,6 +252,9 @@ namespace CustomSkills
 
 		bool reload = false;
 		for (const auto& [key, group] : _groupIds) {
+			if (!group)
+				continue;
+
 			if (group->OpenMenu) {
 				const auto amt = static_cast<std::int16_t>(group->OpenMenu->value);
 				if (amt > 0) {
@@ -270,7 +275,7 @@ namespace CustomSkills
 			}
 
 			for (const auto& sk : group->Skills) {
-				if (sk->ShowLevelup) {
+				if (sk && sk->ShowLevelup) {
 					const auto amt = static_cast<std::int16_t>(sk->ShowLevelup->value);
 					if (amt > 0) {
 						sk->ShowLevelup->value = 0;

@@ -107,7 +107,48 @@ namespace CustomSkills
 		std::istringstream(id) >> std::hex >> rawFormID;
 
 		return dataHandler->LookupForm<T>(rawFormID, file);
-	};
+	}
+
+	static RE::ActorValue ParseSkill(const Json::Value& a_val)
+	{
+		static constexpr auto SKILLS = std::to_array<std::pair<std::string_view, RE::ActorValue>>({
+			{ "Alchemy"sv, RE::ActorValue::kAlchemy },
+			{ "Alteration"sv, RE::ActorValue::kAlteration },
+			{ "Block"sv, RE::ActorValue::kBlock },
+			{ "Conjuration"sv, RE::ActorValue::kConjuration },
+			{ "Destruction"sv, RE::ActorValue::kDestruction },
+			{ "Enchanting"sv, RE::ActorValue::kEnchanting },
+			{ "HeavyArmor"sv, RE::ActorValue::kHeavyArmor },
+			{ "Illusion"sv, RE::ActorValue::kIllusion },
+			{ "LightArmor"sv, RE::ActorValue::kLightArmor },
+			{ "Lockpicking"sv, RE::ActorValue::kLockpicking },
+			{ "Marksman"sv, RE::ActorValue::kArchery },
+			{ "OneHanded"sv, RE::ActorValue::kOneHanded },
+			{ "Pickpocket"sv, RE::ActorValue::kPickpocket },
+			{ "Restoration"sv, RE::ActorValue::kRestoration },
+			{ "Smithing"sv, RE::ActorValue::kSmithing },
+			{ "Sneak"sv, RE::ActorValue::kSneak },
+			{ "Speechcraft"sv, RE::ActorValue::kSpeech },
+			{ "TwoHanded"sv, RE::ActorValue::kTwoHanded },
+		});
+		static_assert(std::ranges::is_sorted(SKILLS));
+
+		const Json::String str = a_val.asString();
+		const auto it = std::ranges::lower_bound(
+			SKILLS,
+			std::string_view(str),
+			util::iless{},
+			[](auto&& kv)
+			{
+				return kv.first;
+			});
+
+		if (it != std::end(SKILLS) && ::_stricmp(it->first.data(), str.data()) == 0) {
+			return it->second;
+		}
+
+		return RE::ActorValue::kHealth;
+	}
 
 	auto Settings::ReadSkill(const std::filesystem::path& a_file) -> std::shared_ptr<SkillGroup>
 	{
@@ -170,9 +211,22 @@ namespace CustomSkills
 		}
 
 		if (const auto& skills = root["skills"]; skills.isArray()) {
+			auto actorValue = util::to_underlying(RE::ActorValue::kTotal);
 			for (const auto& skill : skills) {
+				if (skill.isString()) {
+					group->Skills.emplace_back(nullptr);
+					group->ActorValues.push_back(ParseSkill(skill.asString()));
+					++actorValue;
+					continue;
+				}
+				else if (!skill.isObject()) {
+					continue;
+				}
+
 				const auto& sk = group->Skills.emplace_back(std::make_shared<Skill>());
 				sk->Info = factory->Create();
+
+				group->ActorValues.push_back(static_cast<RE::ActorValue>(actorValue++));
 
 				if (const auto& id = skill["id"]; id.isString()) {
 					sk->ID = id.asString();

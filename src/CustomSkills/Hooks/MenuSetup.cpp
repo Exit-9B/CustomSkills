@@ -38,7 +38,10 @@ namespace CustomSkills
 				menu->numSelectableTrees = (std::max)(2U, numSkills);
 
 				menu->skillTrees.clear();
-				for (int i = 0, num = (std::max)(18U, numSkills); i < num; ++i) {
+				for (std::uint32_t i = 0; i < numSkills; ++i) {
+					menu->skillTrees.push_back(CustomSkillsManager::_menuSkills->ActorValues[i]);
+				}
+				for (std::uint32_t i = numSkills; i < 18; ++i) {
 					menu->skillTrees.push_back(static_cast<RE::ActorValue>(
 						util::to_underlying(RE::ActorValue::kTotal) + i));
 				}
@@ -206,14 +209,11 @@ namespace CustomSkills
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::GetActorValueInfo, 0x18);
 		REL::make_pattern<"33 C0 C3 CC CC CC">().match_or_fail(hook.address());
 
-		auto GetActorValueInfo = +[](std::uint32_t a_actorValue) -> RE::ActorValueInfo*
+		auto GetActorValueInfo = +[](RE::ActorValue a_actorValue) -> RE::ActorValueInfo*
 		{
 			if (CustomSkillsManager::IsOurMenuMode()) {
-				const std::uint32_t index = a_actorValue -
-					util::to_underlying(RE::ActorValue::kTotal);
-
-				if (index < CustomSkillsManager::_menuSkills->Skills.size()) {
-					return CustomSkillsManager::_menuSkills->Skills[index]->Info;
+				if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_actorValue)) {
+					return skill->Info;
 				}
 				return Game::GetActorValueInfo(RE::ActorValue::kHealth);
 			}

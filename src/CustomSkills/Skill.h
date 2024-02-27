@@ -51,7 +51,6 @@ namespace CustomSkills
 		RE::TESGlobal* Legendary = nullptr;
 		RE::TESGlobal* Color = nullptr;
 		RE::ActorValueInfo* Info = nullptr;
-		std::uint32_t SkillTreeWidth = 3;
 		std::string ColorStr;
 		std::int32_t ColorLast = -1;
 	};
@@ -66,5 +65,6 @@ namespace CustomSkills
 		RE::TESGlobal* PerkPoints = nullptr;
 		RE::TESGlobal* DebugReload = nullptr;
 		std::vector<std::shared_ptr<Skill>> Skills;
+		std::vector<RE::ActorValue> ActorValues;
 	};
 }

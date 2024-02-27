@@ -57,9 +57,10 @@ namespace util
 
 	struct iless
 	{
-		bool operator()(const std::string& a_str1, const std::string& a_str2) const
+		template <std::ranges::contiguous_range R1, std::ranges::contiguous_range R2>
+		bool operator()(R1&& a_str1, R2&& a_str2) const
 		{
-			return ::_stricmp(a_str1.data(), a_str2.data()) < 0;
+			return ::_stricmp(std::ranges::data(a_str1), std::ranges::data(a_str2)) < 0;
 		}
 	};
 
