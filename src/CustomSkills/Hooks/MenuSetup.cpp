@@ -31,14 +31,14 @@ namespace CustomSkills
 		{
 			auto menu = _StatsMenu_ctor(a_mem);
 			if (CustomSkillsManager::IsOurMenuMode()) {
+				const std::uint32_t numSkills = static_cast<std::uint32_t>(
+					CustomSkillsManager::_menuSkills->Skills.size());
+
 				menu->selectedTree = CustomSkillsManager::_menuSkills->LastSelectedTree;
-				menu->numSelectableTrees = 2;
+				menu->numSelectableTrees = (std::max)(2U, numSkills);
 
 				menu->skillTrees.clear();
-				const auto numSkills = (std::max)(
-					18ULL,
-					CustomSkillsManager::_menuSkills->Skills.size());
-				for (int i = 0; i < numSkills; ++i) {
+				for (int i = 0, num = (std::max)(18U, numSkills); i < num; ++i) {
 					menu->skillTrees.push_back(static_cast<RE::ActorValue>(
 						util::to_underlying(RE::ActorValue::kTotal) + i));
 				}
