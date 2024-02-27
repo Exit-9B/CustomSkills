@@ -41,6 +41,7 @@ namespace RE
 			inline constexpr auto Ctor = REL::ID(52508);
 			inline constexpr auto DtorImpl = REL::ID(52509);
 			inline constexpr auto GetPerkCount = REL::ID(52537);
+			inline constexpr auto LastSelectedTree = REL::ID(383192);
 			inline constexpr auto ModifyPerkCount = REL::ID(52538);
 			inline constexpr auto ProcessButton = REL::ID(52520);
 			inline constexpr auto ProcessMessage = REL::ID(52510);

@@ -25,6 +25,8 @@ namespace CustomSkills
 
 		static void OpenStatsMenu(std::shared_ptr<SkillGroup> a_group);
 
+		static void NotifyOpeningSkills();
+
 		static bool IsMenuControlsEnabled();
 
 		static bool IsStatsMenuOpen();

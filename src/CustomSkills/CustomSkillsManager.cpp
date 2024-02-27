@@ -71,16 +71,27 @@ namespace CustomSkills
 
 	void CustomSkillsManager::OpenStatsMenu(std::shared_ptr<SkillGroup> a_group)
 	{
-		_menuSkills = a_group;
-
-		if (!_menuSkills || _menuSkills->Skills.empty()) {
+		if (!a_group || a_group->Skills.empty()) {
 			return;
 		}
 
+		_menuSkills = a_group;
 		SetMenuState(MenuState::WaitingToOpen);
 
 		Game::FadeOutGame(true, true, 1.0f, true, 0.0f);
 		Game::OpenStatsMenu(false);
+	}
+
+	void CustomSkillsManager::NotifyOpeningSkills()
+	{
+		if (IsBeastMode() || _menuState == MenuState::WaitingToOpen)
+			return;
+
+		const auto it = _groupIds.find("SKILLS"s);
+		if (it != _groupIds.end() && it->second) {
+			_menuSkills = it->second;
+			SetMenuState(MenuState::WaitingToOpen);
+		}
 	}
 
 	bool CustomSkillsManager::IsMenuControlsEnabled()

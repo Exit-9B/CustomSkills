@@ -10,7 +10,7 @@ namespace CustomSkills
 {
 	void MenuSetup::WriteHooks()
 	{
-		MenuPropertiesPatch();
+		MenuConstructorPatch();
 		SkillDomeArtPatch();
 		CameraPatch();
 		SkillArrayPatch();
@@ -19,7 +19,7 @@ namespace CustomSkills
 		CloseMenuPatch();
 	}
 
-	void MenuSetup::MenuPropertiesPatch()
+	void MenuSetup::MenuConstructorPatch()
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::Create, 0x5D);
 		REL::make_pattern<"E8">().match_or_fail(hook.address());
@@ -29,7 +29,10 @@ namespace CustomSkills
 
 		auto SetupStatsMenu = +[](RE::StatsMenu* a_mem)
 		{
-			auto menu = _StatsMenu_ctor(a_mem);
+			CustomSkillsManager::NotifyOpeningSkills();
+
+			const auto menu = _StatsMenu_ctor(a_mem);
+
 			if (CustomSkillsManager::IsOurMenuMode()) {
 				const std::uint32_t numSkills = static_cast<std::uint32_t>(
 					CustomSkillsManager::_menuSkills->Skills.size());
@@ -244,7 +247,9 @@ namespace CustomSkills
 				CustomSkillsManager::_menuSkills->LastSelectedTree = a_statsMenu->selectedTree;
 			}
 			else {
-				REL::Relocation<std::uint32_t*> lastSelectedTree{ REL::ID(383192) };
+				REL::Relocation<std::uint32_t*> lastSelectedTree{
+					RE::Offset::StatsMenu::LastSelectedTree
+				};
 				*lastSelectedTree = a_statsMenu->selectedTree;
 			}
 		};

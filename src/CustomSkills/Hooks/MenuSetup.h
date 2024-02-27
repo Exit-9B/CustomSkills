@@ -8,8 +8,8 @@ namespace CustomSkills
 		static void WriteHooks();
 
 	private:
-		// Open menu at correct index
-		static void MenuPropertiesPatch();
+		// Setup custom menu properties
+		static void MenuConstructorPatch();
 
 		// Skill dome nif
 		static void SkillDomeArtPatch();

@@ -1,5 +1,6 @@
 #include "Settings.h"
 
+#include "RE/Offset.h"
 #include "TreeNode.h"
 
 #include <SimpleIni.h>
@@ -27,6 +28,16 @@ namespace CustomSkills
 			std::string key = filename.stem().string();
 
 			if (const auto sk = ReadSkill(entry.path())) {
+				if (::_stricmp(key.data(), "SKILLS") == 0) {
+					REL::Relocation<std::uint32_t*> lastSelectedTree{
+						RE::Offset::StatsMenu::LastSelectedTree
+					};
+
+					if (*lastSelectedTree < sk->Skills.size()) {
+						sk->LastSelectedTree = *lastSelectedTree;
+					}
+				}
+
 				skills.emplace(std::move(key), std::move(sk));
 			}
 		}
