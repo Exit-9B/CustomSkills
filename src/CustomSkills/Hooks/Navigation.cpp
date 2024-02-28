@@ -11,6 +11,7 @@ namespace CustomSkills
 	{
 		LockRotationPatch();
 		RotationSpeedPatch();
+		SelectedTreePatch();
 	}
 
 	void Navigation::LockRotationPatch()
@@ -65,5 +66,52 @@ namespace CustomSkills
 		auto& trampoline = SKSE::GetTrampoline();
 		REL::safe_fill(hook.address(), REL::NOP, 0x8);
 		trampoline.write_branch<6>(hook.address(), patch->getCode());
+	}
+
+	void Navigation::SelectedTreePatch()
+	{
+		auto hook = REL::Relocation<std::uintptr_t>(
+			RE::Offset::StatsMenu::UpdateSelectedTree,
+			0x5E);
+		REL::make_pattern<"8B 87 10 03 00 00">().match_or_fail(hook.address());
+
+		auto ComputeSelectedTree = +[](RE::StatsMenu* menu, float angle) -> std::uint32_t
+		{
+			const float skillAngle = 360.0f / menu->numSelectableTrees;
+
+			angle += skillAngle * 0.5f;
+
+			if (angle >= 360.0f) {
+				angle = 0.0f;
+			}
+
+			return static_cast<std::uint32_t>(angle / skillAngle);
+		};
+
+		struct Patch : Xbyak::CodeGenerator
+		{
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
+			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
+
+				movaps(xmm1, xmm2);
+				mov(rcx, rdi);
+				call(ptr[rip + funcLbl]);
+				mov(ebx, eax);
+				jmp(ptr[rip + retnLbl]);
+				nop();
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
+			}
+		};
+
+		Patch
+			patch{ reinterpret_cast<std::uintptr_t>(ComputeSelectedTree), hook.address() + 0xFA };
+		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 }

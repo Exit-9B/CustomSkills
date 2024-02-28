@@ -56,6 +56,7 @@ namespace RE
 			inline constexpr auto SetCameraTarget = REL::ID(52530);
 			inline constexpr auto SetSelectedTree = REL::ID(52539);
 			inline constexpr auto SetSkillInfo = REL::ID(52527);
+			inline constexpr auto UpdateSelectedTree = REL::ID(52543);
 			inline constexpr auto UpdateSkillList = REL::ID(52525);
 		}
 

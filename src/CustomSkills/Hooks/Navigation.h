@@ -13,5 +13,8 @@ namespace CustomSkills
 
 		// Normalize rotation speed
 		static void RotationSpeedPatch();
+
+		// Compute index of current angle
+		static void SelectedTreePatch();
 	};
 }
