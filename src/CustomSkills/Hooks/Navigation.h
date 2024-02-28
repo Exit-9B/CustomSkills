@@ -11,9 +11,6 @@ namespace CustomSkills
 		// Prevent tree switching
 		static void LockRotationPatch();
 
-		// Prevent fading of constellation image
-		static void LockShaderPatch();
-
 		// Normalize rotation speed
 		static void RotationSpeedPatch();
 	};

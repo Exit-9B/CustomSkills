@@ -17,9 +17,6 @@ namespace CustomSkills
 		// Show skill level and XP
 		static void SkillProgressPatch();
 
-		// Skill level in tree view
-		static void SkillLevelPatch();
-
 		// Unknown
 		static void SkillLevelPatch2();
 

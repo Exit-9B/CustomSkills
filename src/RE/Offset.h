@@ -36,12 +36,15 @@ namespace RE
 
 		namespace StatsMenu
 		{
+			inline constexpr auto Animate = REL::ID(52517);
 			inline constexpr auto Create = REL::ID(52612);
 			inline constexpr auto CreateStars = REL::ID(52540);
 			inline constexpr auto Ctor = REL::ID(52508);
 			inline constexpr auto DtorImpl = REL::ID(52509);
 			inline constexpr auto GetPerkCount = REL::ID(52537);
+			inline constexpr auto GotoNode = REL::ID(52539);
 			inline constexpr auto LastSelectedTree = REL::ID(383192);
+			inline constexpr auto LoadSkydome = REL::ID(52531);
 			inline constexpr auto ModifyPerkCount = REL::ID(52538);
 			inline constexpr auto ProcessButton = REL::ID(52520);
 			inline constexpr auto ProcessMessage = REL::ID(52510);
@@ -60,6 +63,7 @@ namespace RE
 		inline constexpr auto FadeOutGame = REL::ID(52847);
 		inline constexpr auto GetActorValueInfo = REL::ID(27202);
 		inline constexpr auto GetActorValueName = REL::ID(27192);
+		inline constexpr auto GetActorValueColor = REL::ID(52945);
 		inline constexpr auto GetComparisonValue = REL::ID(29919);
 		inline constexpr auto IsBeastMode = REL::ID(406438);
 		inline constexpr auto IsInMenuMode = REL::ID(403435);

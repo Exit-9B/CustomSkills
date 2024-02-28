@@ -84,14 +84,16 @@ namespace CustomSkills
 
 	void CustomSkillsManager::NotifyOpeningSkills()
 	{
-		if (IsBeastMode() || _menuState == MenuState::WaitingToOpen)
-			return;
-
-		const auto it = _groupIds.find("SKILLS"s);
-		if (it != _groupIds.end() && it->second) {
-			_menuSkills = it->second;
-			SetMenuState(MenuState::WaitingToOpen);
+		if (!IsBeastMode() && _menuState != MenuState::WaitingToOpen) {
+			const auto it = _groupIds.find("SKILLS"s);
+			if (it != _groupIds.end() && it->second) {
+				_menuSkills = it->second;
+				SetMenuState(MenuState::WaitingToOpen);
+			}
 		}
+
+		_cImageControllers.clear();
+		_cImageControllers.resize(GetCurrentSkillCount());
 	}
 
 	bool CustomSkillsManager::IsMenuControlsEnabled()

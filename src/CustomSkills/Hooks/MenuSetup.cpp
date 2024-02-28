@@ -11,10 +11,9 @@ namespace CustomSkills
 	void MenuSetup::WriteHooks()
 	{
 		MenuConstructorPatch();
+		CreateStarsPatch();
 		SkillDomeArtPatch();
 		CameraPatch();
-		SkillArrayPatch();
-		UpdateSkillPatch();
 		SkillTreePatch();
 		CloseMenuPatch();
 	}
@@ -55,6 +54,57 @@ namespace CustomSkills
 		// TRAMPOLINE: 14
 		auto& trampoline = SKSE::GetTrampoline();
 		_StatsMenu_ctor = trampoline.write_call<5>(hook.address(), SetupStatsMenu);
+	}
+
+	void MenuSetup::CreateStarsPatch()
+	{
+		auto hook1 = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::ProcessMessage, 0x9A3);
+		auto hook2 = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::ProcessMessage, 0xCF8);
+		REL::make_pattern<"83 BE D0 01 00 00 18">().match_or_fail(hook1.address());
+		REL::make_pattern<"83 BE D0 01 00 00 18">().match_or_fail(hook2.address());
+
+		auto GetMaxSkillIndex = +[]() -> std::uint32_t
+		{
+			return CustomSkillsManager::GetCurrentSkillCount() + 6;
+		};
+
+		struct Patch : Xbyak::CodeGenerator
+		{
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
+			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
+
+				call(ptr[rip + funcLbl]);
+				cmp(dword[rsi + 0x1D0], eax);
+				jmp(ptr[rip + retnLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
+			}
+		};
+
+		// TRAMPOLINE: 16
+		auto& trampoline = SKSE::GetTrampoline();
+
+		auto patch1 = new Patch(
+			reinterpret_cast<std::uintptr_t>(GetMaxSkillIndex),
+			hook1.address() + 0x7);
+		patch1->ready();
+
+		REL::safe_fill(hook1.address(), REL::NOP, 0x7);
+		trampoline.write_branch<6>(hook1.address(), patch1->getCode());
+
+		auto patch2 = new Patch(
+			reinterpret_cast<std::uintptr_t>(GetMaxSkillIndex),
+			hook2.address() + 0x7);
+		patch2->ready();
+
+		REL::safe_fill(hook2.address(), REL::NOP, 0x7);
+		trampoline.write_branch<6>(hook2.address(), patch2->getCode());
 	}
 
 	void MenuSetup::SkillDomeArtPatch()
@@ -119,92 +169,6 @@ namespace CustomSkills
 
 		REL::safe_fill(hook.address(), REL::NOP, 0x13);
 		REL::safe_write(hook.address(), std::addressof(mem), sizeof(mem));
-	}
-
-	void MenuSetup::SkillArrayPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::UpdateSkillList, 0x6B6);
-
-		REL::make_pattern<
-			"49 8B 4D 10 "
-			"48 8B 01 "
-			"44 89 74 24 30 "
-			"C7 44 24 28 5A 00 00 00">()
-			.match_or_fail(hook.address());
-
-		static auto GetRequiredArraySize = +[]() -> std::uint32_t
-		{
-			return CustomSkillsManager::GetCurrentSkillCount() * 5;
-		};
-
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
-			{
-				Xbyak::Label funcLbl;
-				Xbyak::Label retnLbl;
-
-				call(ptr[rip + funcLbl]);
-				mov(ptr[rsp + 0x28], eax);
-				mov(rcx, ptr[r13 + 0x10]);
-				mov(rax, ptr[rcx]);
-				mov(ptr[rsp + 0x30], r14d);
-
-				jmp(ptr[rip + retnLbl]);
-
-				L(funcLbl);
-				dq(a_funcAddr);
-
-				L(retnLbl);
-				dq(a_retnAddr);
-			}
-		};
-
-		auto patch = new Patch(
-			reinterpret_cast<std::uintptr_t>(GetRequiredArraySize),
-			hook.address() + 0x14);
-		patch->ready();
-
-		REL::safe_fill(hook.address(), REL::NOP, 0x14);
-		util::write_14branch(hook.address(), patch->getCode());
-	}
-
-	void MenuSetup::UpdateSkillPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::UpdateSkillList, 0x69B);
-
-		REL::make_pattern<"49 83 C4 04 41 83 FF 12">().match_or_fail(hook.address());
-
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
-			{
-				Xbyak::Label funcLbl;
-				Xbyak::Label retnLbl;
-
-				add(r12, 4);
-				call(ptr[rip + funcLbl]);
-				cmp(r15d, eax);
-
-				jmp(ptr[rip + retnLbl]);
-
-				L(funcLbl);
-				dq(a_funcAddr);
-
-				L(retnLbl);
-				dq(a_retnAddr);
-			}
-		};
-
-		auto patch = new Patch(
-			reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetCurrentSkillCount),
-			hook.address() + 0x8);
-		patch->ready();
-
-		// TRAMPOLINE: 8
-		auto& trampoline = SKSE::GetTrampoline();
-		REL::safe_fill(hook.address(), REL::NOP, 0x8);
-		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 
 	void MenuSetup::SkillTreePatch()

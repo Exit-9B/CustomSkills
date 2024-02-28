@@ -11,17 +11,14 @@ namespace CustomSkills
 		// Setup custom menu properties
 		static void MenuConstructorPatch();
 
+		// Create stars for more than 18 skills
+		static void CreateStarsPatch();
+
 		// Skill dome nif
 		static void SkillDomeArtPatch();
 
 		// Fix camera when using beast skill nif
 		static void CameraPatch();
-
-		// Create array for only one skill
-		static void SkillArrayPatch();
-
-		// Update data for only one skill
-		static void UpdateSkillPatch();
 
 		// Get custom skill tree
 		static void SkillTreePatch();

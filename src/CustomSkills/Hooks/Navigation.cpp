@@ -10,26 +10,12 @@ namespace CustomSkills
 	void Navigation::WriteHooks()
 	{
 		LockRotationPatch();
-		LockShaderPatch();
 		RotationSpeedPatch();
 	}
 
 	void Navigation::LockRotationPatch()
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::Rotate, 0x46);
-		REL::make_pattern<"80 3D ?? ?? ?? ?? 00">().match_or_fail(hook.address());
-
-		util::write_disp(
-			hook.address() + 0x2,
-			hook.address() + 0x7,
-			CustomSkillsManager::IsSingleSkillMode);
-	}
-
-	void Navigation::LockShaderPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(
-			RE::Offset::StatsMenu::ProcessRotateEvent,
-			0x15C);
 		REL::make_pattern<"80 3D ?? ?? ?? ?? 00">().match_or_fail(hook.address());
 
 		util::write_disp(
@@ -75,6 +61,7 @@ namespace CustomSkills
 			hook.address() + 0x8);
 		patch->ready();
 
+		// TRAMPOLINE: 8
 		auto& trampoline = SKSE::GetTrampoline();
 		REL::safe_fill(hook.address(), REL::NOP, 0x8);
 		trampoline.write_branch<6>(hook.address(), patch->getCode());

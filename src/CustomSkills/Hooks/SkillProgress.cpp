@@ -13,7 +13,7 @@ namespace CustomSkills
 		CurrentPerkPointsPatch();
 		SelectPerkPatch();
 		SkillProgressPatch();
-		SkillLevelPatch();
+		//SkillLevelPatch();
 		SkillLevelPatch2();
 		PerkViewSkillLevelPatch();
 		RequirementsTextPatch();
@@ -46,45 +46,6 @@ namespace CustomSkills
 
 		REL::safe_fill(hook.address(), REL::INT3, 0x50);
 		util::write_14branch(hook.address(), &GetSkillProgress);
-	}
-
-	void SkillProgress::SkillLevelPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::UpdateSkillList, 0x10D);
-
-		REL::make_pattern<
-			"48 8B 0D ?? ?? ?? ?? "
-			"48 81 C1 ?? 00 00 00 "
-			"48 8B 01 "
-			"8B D7 "
-			"FF 50 08">()
-			.match_or_fail(hook.address());
-
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_funcAddr) : Xbyak::CodeGenerator(0x16)
-			{
-				Xbyak::Label funcLbl;
-				Xbyak::Label retn;
-
-				mov(ecx, edi);
-				call(ptr[rip + funcLbl]);
-				jmp(retn);
-
-				L(funcLbl);
-				dq(a_funcAddr);
-
-				L(retn);
-			}
-		};
-
-		Patch patch{ reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetSkillLevel) };
-		patch.ready();
-
-		assert(patch.getSize() <= 0x16);
-
-		REL::safe_fill(hook.address(), REL::NOP, 0x16);
-		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
 	void SkillProgress::SkillLevelPatch2()

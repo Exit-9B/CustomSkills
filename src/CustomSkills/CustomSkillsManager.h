@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CImageController.h"
 #include "Skill.h"
 
 namespace CustomSkills
@@ -75,6 +76,7 @@ namespace CustomSkills
 		inline static std::map<RE::TESGlobal*, std::shared_ptr<Skill>> _requirementSkills;
 
 		inline static std::shared_ptr<SkillGroup> _menuSkills = nullptr;
+		inline static std::vector<CImageController> _cImageControllers;
 		inline static MenuState _menuState = MenuState::None;
 		inline static RE::BSFixedString _colorOfSkillNormal = "#FFFFFF";
 	};

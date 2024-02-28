@@ -15,6 +15,8 @@ namespace CustomSkills
 
 		const char* GetActorValueName(RE::ActorValue a_actorValue);
 
+		const char* GetActorValueColor(RE::ActorValue a_actorValue);
+
 		bool IsGamePaused();
 
 		void OpenStatsMenu(bool a_isBeastMode);

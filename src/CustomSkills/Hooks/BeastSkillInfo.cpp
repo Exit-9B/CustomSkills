@@ -18,11 +18,20 @@ namespace CustomSkills
 
 	void BeastSkillInfo::BeastSkillPatch()
 	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::UpdateSkillList, 0x6A9);
-		REL::make_pattern<"80 3D ?? ?? ?? ?? 00">().match_or_fail(hook.address());
+		auto hook1 = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::UpdateSkillList, 0x90);
+		REL::make_pattern<"80 3D ?? ?? ?? ?? 00">().match_or_fail(hook1.address());
+
 		util::write_disp(
-			hook.address() + 0x2,
-			hook.address() + 0x7,
+			hook1.address() + 0x2,
+			hook1.address() + 0x7,
+			CustomSkillsManager::ShouldHideLevel);
+
+		auto hook2 = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::UpdateSkillList, 0x6A9);
+		REL::make_pattern<"80 3D ?? ?? ?? ?? 00">().match_or_fail(hook2.address());
+
+		util::write_disp(
+			hook2.address() + 0x2,
+			hook2.address() + 0x7,
 			CustomSkillsManager::ShouldHideLevel);
 	}
 
