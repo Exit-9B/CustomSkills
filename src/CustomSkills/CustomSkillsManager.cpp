@@ -322,6 +322,7 @@ namespace CustomSkills
 			if (!IsStatsMenuOpen()) {
 				closed = true;
 				SetMenuState(MenuState::None);
+				_menuSkills = nullptr;
 			}
 			break;
 
@@ -329,6 +330,7 @@ namespace CustomSkills
 			if (!IsStatsMenuOpen()) {
 				closed = true;
 				SetMenuState(MenuState::None);
+				_menuSkills = nullptr;
 			}
 			break;
 		}
