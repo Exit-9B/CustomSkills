@@ -29,6 +29,11 @@ namespace RE
 			inline constexpr auto OnIdle = REL::ID(36564);
 		}
 
+		namespace PlayerCharacter
+		{
+			inline constexpr auto Vtbl_ActorValueOwner = REL::ID(208050);
+		}
+
 		namespace PlayerSkills
 		{
 			inline constexpr auto GetSkillProgress = REL::ID(41559);

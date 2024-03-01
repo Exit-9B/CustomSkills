@@ -10,7 +10,6 @@ namespace CustomSkills
 	void BeastSkillInfo::WriteHooks()
 	{
 		BeastSkillPatch();
-		SkillProgressPatch();
 		SkillNamePatch();
 		ZoomOutPatch();
 		PerkViewPatch();
@@ -33,47 +32,6 @@ namespace CustomSkills
 			hook2.address() + 0x2,
 			hook2.address() + 0x7,
 			CustomSkillsManager::ShouldHideLevel);
-	}
-
-	void BeastSkillInfo::SkillProgressPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(
-			RE::Offset::StatsMenu::SetBeastSkillInfo,
-			0x16A);
-
-		REL::make_pattern<
-			"48 8B 0D ?? ?? ?? ?? "
-			"48 81 C1 ?? 00 00 00 "
-			"4C 8B 01 "
-			"8B D0 "
-			"41 FF 50 08">()
-			.match_or_fail(hook.address());
-
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_funcAddr) : Xbyak::CodeGenerator(0x17)
-			{
-				Xbyak::Label funcLbl;
-				Xbyak::Label retn;
-
-				mov(ecx, eax);
-				call(ptr[rip + funcLbl]);
-				jmp(retn);
-
-				L(funcLbl);
-				dq(a_funcAddr);
-
-				L(retn);
-			}
-		};
-
-		Patch patch{ reinterpret_cast<std::uintptr_t>(
-			&CustomSkillsManager::GetSkillProgressPercent) };
-		patch.ready();
-		assert(patch.getSize() <= 0x17);
-
-		REL::safe_fill(hook.address(), REL::NOP, 0x17);
-		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
 	void BeastSkillInfo::SkillNamePatch()

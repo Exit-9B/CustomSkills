@@ -17,11 +17,8 @@ namespace CustomSkills
 		// Show skill level and XP
 		static void SkillProgressPatch();
 
-		// Unknown
-		static void SkillLevelPatch2();
-
-		// Skill level in perk description
-		static void PerkViewSkillLevelPatch();
+		// Get skill levels for custom skills
+		static void ActorValueOwnerPatch();
 
 		// Set requirements text when using GetGlobalValue
 		static void RequirementsTextPatch();

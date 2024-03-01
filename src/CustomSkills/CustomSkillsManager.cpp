@@ -93,7 +93,7 @@ namespace CustomSkills
 		}
 
 		_cImageControllers.clear();
-		_cImageControllers.resize(GetCurrentSkillCount());
+		_cImageControllers.resize((std::max)(GetCurrentSkillCount(), 2U));
 	}
 
 	bool CustomSkillsManager::IsMenuControlsEnabled()

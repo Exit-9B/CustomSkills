@@ -13,8 +13,7 @@ namespace CustomSkills
 		CurrentPerkPointsPatch();
 		SelectPerkPatch();
 		SkillProgressPatch();
-		SkillLevelPatch2();
-		PerkViewSkillLevelPatch();
+		ActorValueOwnerPatch();
 		RequirementsTextPatch();
 	}
 
@@ -47,73 +46,38 @@ namespace CustomSkills
 		util::write_14branch(hook.address(), &GetSkillProgress);
 	}
 
-	void SkillProgress::SkillLevelPatch2()
+	void SkillProgress::ActorValueOwnerPatch()
 	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::SetSkillInfo, 0x16DD);
+		auto vtbl = REL::Relocation<std::uintptr_t>(
+			RE::Offset::PlayerCharacter::Vtbl_ActorValueOwner);
 
-		REL::make_pattern<
-			"48 8B 0D ?? ?? ?? ?? "
-			"48 81 C1 ?? 00 00 00 "
-			"48 8B 01 "
-			"41 8B D7 "
-			"FF 50 08">()
-			.match_or_fail(hook.address());
+		static REL::Relocation<float (RE::PlayerCharacter::*)(RE::ActorValue)> _GetActorValue;
 
-		struct Patch : Xbyak::CodeGenerator
+		auto GetActorValue = +[](RE::PlayerCharacter* player, RE::ActorValue actorValue)
+			-> float
 		{
-			Patch(std::uintptr_t a_funcAddr) : Xbyak::CodeGenerator(0x17)
-			{
-				Xbyak::Label funcLbl;
-				Xbyak::Label retn;
-
-				mov(ecx, r15d);
-				call(ptr[rip + funcLbl]);
-				jmp(retn);
-
-				L(funcLbl);
-				dq(a_funcAddr);
-
-				L(retn);
+			if (const auto skill = CustomSkillsManager::GetCurrentSkill(actorValue)) {
+				return skill->GetLevel();
 			}
+
+			return _GetActorValue(player, actorValue);
 		};
 
-		Patch patch{ reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetSkillLevel) };
-		patch.ready();
+		_GetActorValue = vtbl.write_vfunc(1, GetActorValue);
 
-		assert(patch.getSize() <= 0x17);
+		static REL::Relocation<float (RE::PlayerCharacter::*)(RE::ActorValue)> _GetBaseActorValue;
 
-		REL::safe_fill(hook.address(), REL::NOP, 0x17);
-		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
-	}
-
-	void SkillProgress::PerkViewSkillLevelPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::SetSkillInfo, 0x118F);
-
-		REL::make_pattern<"8B 95 78 06 00 00 FF 50 18">().match_or_fail(hook.address());
-
-		struct Patch : Xbyak::CodeGenerator
+		auto GetBaseActorValue = +[](RE::PlayerCharacter* player, RE::ActorValue actorValue)
+			-> float
 		{
-			Patch(std::uintptr_t a_funcAddr)
-			{
-				Xbyak::Label funcLbl;
-
-				mov(ecx, ptr[rbp + 0x678]);
-				jmp(ptr[rip + funcLbl]);
-
-				L(funcLbl);
-				dq(a_funcAddr);
+			if (const auto skill = CustomSkillsManager::GetCurrentSkill(actorValue)) {
+				return skill->GetLevel();
 			}
+
+			return _GetBaseActorValue(player, actorValue);
 		};
 
-		auto patch = new Patch(
-			reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel));
-		patch->ready();
-
-		// TRAMPOLINE: 8
-		auto& trampoline = SKSE::GetTrampoline();
-		REL::safe_fill(hook.address(), REL::NOP, 0x9);
-		trampoline.write_call<6>(hook.address(), patch->getCode());
+		_GetBaseActorValue = vtbl.write_vfunc(3, GetBaseActorValue);
 	}
 
 	void SkillProgress::RequirementsTextPatch()

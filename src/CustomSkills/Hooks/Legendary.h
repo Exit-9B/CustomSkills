@@ -8,18 +8,6 @@ namespace CustomSkills
 		static void WriteHooks();
 
 	private:
-		// Show legendary hint at level 100
-		static void LegendaryHintPatch();
-
-		// Legendary reset when pressing Jump/YButton
-		static void ProcessButtonPatch();
-
-		// Legendary reset when pressing Space
-		static void ProcessMessagePatch();
-
-		// Check skill level again when confirming
-		static void LegendarySkillConfirmPatch();
-
 		// Reset skill level in custom global variable
 		static void ResetSkillLevelPatch();
 

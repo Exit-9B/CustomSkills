@@ -11,9 +11,6 @@ namespace CustomSkills
 		// Display as Beast Skill (no level)
 		static void BeastSkillPatch();
 
-		// Skill progress for Beast Skill
-		static void SkillProgressPatch();
-
 		// Skill name in tree view
 		static void SkillNamePatch();
 
