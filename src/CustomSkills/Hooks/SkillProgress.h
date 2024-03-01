@@ -17,6 +17,9 @@ namespace CustomSkills
 		// Show skill level and XP
 		static void SkillProgressPatch();
 
+		// Hide skill level in perk description
+		static void HideLevelPatch();
+
 		// Get skill levels for custom skills
 		static void ActorValueOwnerPatch();
 

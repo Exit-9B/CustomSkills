@@ -16,8 +16,5 @@ namespace CustomSkills
 
 		// Re-show Beast Skill info when zooming out
 		static void ZoomOutPatch();
-
-		// No skill level in perk description
-		static void PerkViewPatch();
 	};
 }

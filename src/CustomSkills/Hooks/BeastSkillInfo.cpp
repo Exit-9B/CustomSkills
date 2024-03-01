@@ -12,7 +12,6 @@ namespace CustomSkills
 		BeastSkillPatch();
 		SkillNamePatch();
 		ZoomOutPatch();
-		PerkViewPatch();
 	}
 
 	void BeastSkillInfo::BeastSkillPatch()
@@ -25,7 +24,9 @@ namespace CustomSkills
 			hook1.address() + 0x7,
 			CustomSkillsManager::ShouldHideLevel);
 
-		auto hook2 = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::UpdateSkillList, 0x6A9);
+		auto hook2 = REL::Relocation<std::uintptr_t>(
+			RE::Offset::StatsMenu::UpdateSkillList,
+			0x6A9);
 		REL::make_pattern<"80 3D ?? ?? ?? ?? 00">().match_or_fail(hook2.address());
 
 		util::write_disp(
@@ -64,17 +65,6 @@ namespace CustomSkills
 			RE::Offset::StatsMenu::ProcessRotateEvent,
 			0x5A6);
 
-		util::write_disp(
-			hook.address() + 0x2,
-			hook.address() + 0x7,
-			CustomSkillsManager::ShouldHideLevel);
-	}
-
-	void BeastSkillInfo::PerkViewPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::SetSkillInfo, 0x108F);
-
-		REL::make_pattern<"80 3D ?? ?? ?? ?? 00">().match_or_fail(hook.address());
 		util::write_disp(
 			hook.address() + 0x2,
 			hook.address() + 0x7,

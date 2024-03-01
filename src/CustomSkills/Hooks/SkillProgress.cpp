@@ -13,6 +13,7 @@ namespace CustomSkills
 		CurrentPerkPointsPatch();
 		SelectPerkPatch();
 		SkillProgressPatch();
+		HideLevelPatch();
 		ActorValueOwnerPatch();
 		RequirementsTextPatch();
 	}
@@ -44,6 +45,52 @@ namespace CustomSkills
 
 		REL::safe_fill(hook.address(), REL::INT3, 0x50);
 		util::write_14branch(hook.address(), &GetSkillProgress);
+	}
+
+	void SkillProgress::HideLevelPatch()
+	{
+		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::SetSkillInfo, 0x108F);
+
+		REL::make_pattern<"80 3D ?? ?? ?? ?? 00">().match_or_fail(hook.address());
+
+		auto ShouldHideLevel = +[](RE::ActorValue actorValue) -> bool
+		{
+			if (const auto skill = CustomSkillsManager::GetCurrentSkill(actorValue)) {
+				return skill->Level == nullptr;
+			}
+			return CustomSkillsManager::IsBeastMode();
+		};
+
+		struct Patch : Xbyak::CodeGenerator
+		{
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
+			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
+
+				mov(ecx, ptr[rbp + 0x678]);
+				call(ptr[rip + funcLbl]);
+				cmp(al, 0);
+				mov(rax, ptr[rbp - 0x70]);
+				jmp(ptr[rip + retnLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
+			}
+		};
+
+		auto patch = new Patch(
+			reinterpret_cast<std::uintptr_t>(ShouldHideLevel),
+			hook.address() + 0x7);
+		patch->ready();
+
+		// TRAMPOLINE: 8
+		auto& trampoline = SKSE::GetTrampoline();
+		REL::safe_fill(hook.address(), REL::NOP, 0x7);
+		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 
 	void SkillProgress::ActorValueOwnerPatch()
