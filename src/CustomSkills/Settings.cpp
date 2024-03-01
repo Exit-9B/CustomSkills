@@ -281,10 +281,6 @@ namespace CustomSkills
 					sk->ShowLevelup = ParseForm<RE::TESGlobal>(dataHandler, showLevelup);
 				}
 
-				if (const auto& gridOffset = skill["gridOffset"]; gridOffset.isUInt()) {
-					sk->Info->perkTreeWidth = gridOffset.asUInt();
-				}
-
 				std::vector<std::shared_ptr<TreeNode>> tns;
 				if (const auto& nodes = skill["nodes"]; nodes.isArray()) {
 					std::map<std::string, std::int32_t> ids;
@@ -297,6 +293,17 @@ namespace CustomSkills
 						}
 					}
 
+					std::int32_t gridWidth = 1;
+					for (const auto& node : nodes) {
+						const auto x = node["x"].asDouble();
+						gridWidth = (std::max)(
+							gridWidth,
+							static_cast<std::int32_t>(std::ceil(x * 2)));
+					}
+
+					sk->Info->perkTreeWidth = gridWidth;
+					const std::uint32_t xMax = (gridWidth + 1) / 2;
+
 					for (std::int32_t i = 0; i < size; ++i) {
 						const auto& node = nodes[i];
 						const auto& tn = tns.emplace_back(std::make_shared<TreeNode>());
@@ -304,18 +311,15 @@ namespace CustomSkills
 						if (const auto& perk = node["perk"]; perk.isString()) {
 							tn->Perk = ParseForm<RE::BGSPerk>(dataHandler, perk);
 						}
-						if (const auto& x = node["x"]; x.isNumeric()) {
-							tn->X = x.asFloat();
-						}
-						if (const auto& y = node["y"]; y.isNumeric()) {
-							tn->Y = y.asFloat();
-						}
-						if (const auto& gridX = node["gridX"]; gridX.isInt()) {
-							tn->GridX = gridX.asInt();
-						}
-						if (const auto& gridY = node["gridY"]; gridY.isInt()) {
-							tn->GridY = gridY.asInt();
-						}
+
+						const auto x = node["x"].asDouble() + gridWidth * 0.5;
+						const auto y = node["y"].asDouble();
+						tn->GridX = (std::max)(static_cast<std::int32_t>(x + 0.58), 0);
+						tn->X = static_cast<float>(x - tn->GridX);
+						tn->GridY = (std::min)(
+							(std::max)(static_cast<std::int32_t>(y - 0.12 * (xMax + 1)), 0),
+							4);
+						tn->Y = static_cast<float>(y - tn->GridY);
 
 						if (const auto& links = node["links"]; links.isArray()) {
 							for (const auto& link : links) {

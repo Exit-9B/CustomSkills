@@ -13,7 +13,6 @@ namespace CustomSkills
 		CurrentPerkPointsPatch();
 		SelectPerkPatch();
 		SkillProgressPatch();
-		//SkillLevelPatch();
 		SkillLevelPatch2();
 		PerkViewSkillLevelPatch();
 		RequirementsTextPatch();

@@ -204,16 +204,21 @@ namespace CustomSkills
 
 		auto SaveLastSelectedTree = +[](RE::StatsMenu* a_statsMenu)
 		{
+			static REL::Relocation<std::uint32_t*> lastSelectedTree{
+				RE::Offset::StatsMenu::LastSelectedTree
+			};
+
 			if (CustomSkillsManager::IsBeastMode()) {
 				return;
 			}
 			else if (CustomSkillsManager::IsOurMenuMode()) {
 				CustomSkillsManager::_menuSkills->LastSelectedTree = a_statsMenu->selectedTree;
+				if (CustomSkillsManager::FindSkillMenu("SKILLS"s) ==
+					CustomSkillsManager::_menuSkills) {
+					*lastSelectedTree = a_statsMenu->selectedTree;
+				}
 			}
 			else {
-				REL::Relocation<std::uint32_t*> lastSelectedTree{
-					RE::Offset::StatsMenu::LastSelectedTree
-				};
 				*lastSelectedTree = a_statsMenu->selectedTree;
 			}
 		};
