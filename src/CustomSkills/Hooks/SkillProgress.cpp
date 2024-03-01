@@ -98,9 +98,10 @@ namespace CustomSkills
 		auto vtbl = REL::Relocation<std::uintptr_t>(
 			RE::Offset::PlayerCharacter::Vtbl_ActorValueOwner);
 
-		static REL::Relocation<float (RE::PlayerCharacter::*)(RE::ActorValue)> _GetActorValue;
+		using GetActorValue_t = float (RE::PlayerCharacter::*)(RE::ActorValue) const;
+		static REL::Relocation<GetActorValue_t> _GetActorValue;
 
-		auto GetActorValue = +[](RE::PlayerCharacter* player, RE::ActorValue actorValue)
+		auto GetActorValue = +[](const RE::PlayerCharacter* player, RE::ActorValue actorValue)
 			-> float
 		{
 			if (const auto skill = CustomSkillsManager::GetCurrentSkill(actorValue)) {
@@ -112,9 +113,10 @@ namespace CustomSkills
 
 		_GetActorValue = vtbl.write_vfunc(1, GetActorValue);
 
-		static REL::Relocation<float (RE::PlayerCharacter::*)(RE::ActorValue)> _GetBaseActorValue;
+		using GetBaseActorValue_t = float (RE::PlayerCharacter::*)(RE::ActorValue) const;
+		static REL::Relocation<GetBaseActorValue_t> _GetBaseActorValue;
 
-		auto GetBaseActorValue = +[](RE::PlayerCharacter* player, RE::ActorValue actorValue)
+		auto GetBaseActorValue = +[](const RE::PlayerCharacter* player, RE::ActorValue actorValue)
 			-> float
 		{
 			if (const auto skill = CustomSkillsManager::GetCurrentSkill(actorValue)) {
@@ -125,6 +127,24 @@ namespace CustomSkills
 		};
 
 		_GetBaseActorValue = vtbl.write_vfunc(3, GetBaseActorValue);
+
+		using SetBaseActorValue_t = float (RE::PlayerCharacter::*)(RE::ActorValue);
+		static REL::Relocation<SetBaseActorValue_t> _SetBaseActorValue;
+
+		auto SetBaseActorValue =
+			+[](RE::PlayerCharacter* player, RE::ActorValue actorValue, float value)
+		{
+			if (const auto skill = CustomSkillsManager::GetCurrentSkill(actorValue)) {
+				if (skill->Level) {
+					skill->Level->value = value;
+				}
+			}
+			else {
+				_SetBaseActorValue(player, actorValue);
+			}
+		};
+
+		_SetBaseActorValue = vtbl.write_vfunc(4, SetBaseActorValue);
 	}
 
 	void SkillProgress::RequirementsTextPatch()

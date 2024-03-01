@@ -8,9 +8,6 @@ namespace CustomSkills
 		static void WriteHooks();
 
 	private:
-		// Reset skill level in custom global variable
-		static void ResetSkillLevelPatch();
-
 		// Skip setting data in player skills struct
 		static void PlayerSkillsPatch();
 

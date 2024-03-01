@@ -9,50 +9,8 @@ namespace CustomSkills
 {
 	void Legendary::WriteHooks()
 	{
-		ResetSkillLevelPatch();
 		PlayerSkillsPatch();
 		RefundPerksPatch();
-	}
-
-	void Legendary::ResetSkillLevelPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(
-			RE::Offset::LegendarySkillResetConfirmCallback::Run,
-			0x1F6);
-
-		REL::make_pattern<"8B 56 1C FF 50 20">().match_or_fail(hook.address());
-
-		static auto LegendaryReset =
-			+[](RE::ActorValueOwner* a_avOwner, RE::ActorValue a_skill, float a_resetValue)
-		{
-			if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_skill)) {
-				skill->LegendaryReset(a_resetValue);
-			}
-			else {
-				a_avOwner->SetBaseActorValue(a_skill, a_resetValue);
-			}
-		};
-
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_funcAddr)
-			{
-				Xbyak::Label funcLbl;
-
-				mov(edx, ptr[rsi + offsetof(RE::LegendarySkillResetConfirmCallback, skill)]);
-				jmp(ptr[rip + funcLbl]);
-
-				L(funcLbl);
-				dq(a_funcAddr);
-			}
-		};
-
-		auto patch = new Patch(reinterpret_cast<std::uintptr_t>(LegendaryReset));
-		patch->ready();
-
-		// TRAMPOLINE: 8
-		auto& trampoline = SKSE::GetTrampoline();
-		trampoline.write_call<6>(hook.address(), patch->getCode());
 	}
 
 	void Legendary::PlayerSkillsPatch()
@@ -67,8 +25,16 @@ namespace CustomSkills
 		auto MakeLegendary = +[](RE::PlayerCharacter::PlayerSkills* a_playerSkills,
 								 RE::ActorValue a_actorValue)
 		{
-			// We don't do this here for custom skills
-			if (!CustomSkillsManager::IsOurMenuMode()) {
+			if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_actorValue)) {
+				if (skill->Ratio) {
+					skill->Ratio->value = 0.0f;
+				}
+
+				if (skill->Legendary) {
+					skill->Legendary->value += 1;
+				}
+			}
+			else {
 				_MakeLegendary(a_playerSkills, a_actorValue);
 			}
 		};

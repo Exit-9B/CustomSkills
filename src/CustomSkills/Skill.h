@@ -28,21 +28,6 @@ namespace CustomSkills
 			return true;
 		}
 
-		void LegendaryReset(float a_resetLevel)
-		{
-			if (Level) {
-				Level->value = a_resetLevel;
-			}
-
-			if (Ratio) {
-				Ratio->value = 0.0f;
-			}
-
-			if (Legendary) {
-				Legendary->value++;
-			}
-		}
-
 		std::string ID;
 		std::string Description;
 		RE::TESGlobal* Level = nullptr;
