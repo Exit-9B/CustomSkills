@@ -114,7 +114,7 @@
                 ]
               },
               "showLevelup": {
-                "description": "Optional global variable that is set to 0; itcan be set to 1 to display the level up message on the HUD",
+                "description": "Optional global variable that is set to 0; it can be set to 1 to display the level up message on the HUD",
                 "anyOf": [
                   { "type": "null" },
                   { "$ref": "#/$defs/form" }
@@ -138,13 +138,17 @@
                   }
                 ],
                 "items": {
+                  "description": "Perk node specification",
                   "type": "object",
                   "properties": {
                     "id": {
                       "description": "Optional ID for referencing this node in links",
                       "type": "string"
                     },
-                    "perk": { "$ref": "#/$defs/form" },
+                    "perk": {
+                      "description": "The perk for this node",
+                      "$ref": "#/$defs/form"
+                    },
                     "x": {
                       "description": "Horizontal position of the node (positive direction is left)",
                       "type": "number"
@@ -160,7 +164,8 @@
                         "types": [ "integer", "string" ]
                       }
                     }
-                  }
+                  },
+                  "requiredProperties": [ "perk", "x", "y" ]
                 }
               }
             },
