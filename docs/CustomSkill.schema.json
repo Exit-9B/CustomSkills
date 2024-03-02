@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Custom Skills Framework",
+  "description": "Defines custom skills",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "skydome": {
+      "description": "Specification of skydome (background) model for this skill menu",
+      "type": "object",
+      "properties": {
+        "model": {
+          "description": "Path to the skydome nif (relative to Data/Meshes)",
+          "type": "string",
+          "default": "DLC01/Interface/INTVampirePerkSkydome.nif"
+        },
+        "cameraRightPoint": {
+          "description": "Point index used for computing the camera up vector; 1 for vanilla skydome and 2 for beast skydome",
+          "type": "integer",
+          "minimum": 1,
+          "default": 2
+        }
+      }
+    },
+    "showMenu": {
+      "description": "Optional global variable that is set to 0; it can be set to 1 to show the menu",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/form" }
+      ]
+    },
+    "debugReload": {
+      "description": "Optional global variable that is set to 0; it can be set to 1 to reload configs",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/form" }
+      ]
+    },
+    "perkPoints": {
+      "description": "Optional global variable that contains custom perk points for these skills; if not set, then the player's regular perk points will be used",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/form" }
+      ]
+    },
+    "skills": {
+      "description": "Array containing the skills to show in the menu",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "anyOf": [
+          {
+            "description": "Standard skill to be shown in the custom menu",
+            "enum": [
+              "Alchemy",
+              "Alteration",
+              "Block",
+              "Conjuration",
+              "Destruction",
+              "Enchanting",
+              "HeavyArmor",
+              "Illusion",
+              "LightArmor",
+              "Lockpicking",
+              "Marksman",
+              "OneHanded",
+              "Pickpocket",
+              "Restoration",
+              "Smithing",
+              "Sneak",
+              "Speechcraft",
+              "TwoHanded"
+            ]
+          },
+          {
+            "description": "Custom skill specification",
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "Unique ID of this skill to reference it with Papyrus functions",
+                "type": "string"
+              },
+              "name": { "$ref": "#/$defs/localizedString" },
+              "description": { "$ref": "#/$defs/localizedString" },
+              "level": {
+                "description": "Global variable that contains the current skill level",
+                "anyOf": [
+                  { "type": "null" },
+                  { "$ref": "#/$defs/form" }
+                ]
+              },
+              "ratio": {
+                "description": "Global variable that contains progress to the next level (between 0 and 1)",
+                "anyOf": [
+                  { "type": "null" },
+                  { "$ref": "#/$defs/form" }
+                ]
+              },
+              "legendary": {
+                "description": "Optional global variable that contains the count of how many times the skill has been made legendary",
+                "anyOf": [
+                  { "type": "null" },
+                  { "$ref": "#/$defs/form" }
+                ]
+              },
+              "color": {
+                "description": "Optional global variable that contains the RGB color of the skill (white: 0xFFFFFF; red: 0xFF0000; green: 0x189515)",
+                "anyOf": [
+                  { "type": "null" },
+                  { "$ref": "#/$defs/form" }
+                ]
+              },
+              "showLevelup": {
+                "description": "Optional global variable that is set to 0; itcan be set to 1 to display the level up message on the HUD",
+                "anyOf": [
+                  { "type": "null" },
+                  { "$ref": "#/$defs/form" }
+                ]
+              },
+              "nodes": {
+                "description": "List of nodes in the tree; the first node is required even if the skill has no perks",
+                "type": "array",
+                "minItems": 1,
+                "prefixItems": [
+                  {
+                    "description": "This is the hidden root node that should link to the first perk node",
+                    "type": "object",
+                    "properties": {
+                      "links": {
+                        "description": "IDs or indices of linked perk nodes",
+                        "type": "array",
+                        "items": { "types": [ "integer", "string" ] }
+                      }
+                    }
+                  }
+                ],
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "description": "Optional ID for referencing this node in links",
+                      "type": "string"
+                    },
+                    "perk": { "$ref": "#/$defs/form" },
+                    "x": {
+                      "description": "Horizontal position of the node (positive direction is left)",
+                      "type": "number"
+                    },
+                    "y": {
+                      "description": "Vertical position of the node (positive direction is up)",
+                      "type": "number"
+                    },
+                    "links": {
+                      "description": "IDs or indices of linked perk nodes",
+                      "type": "array",
+                      "items": {
+                        "types": [ "integer", "string" ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "requiredProperties": [ "nodes" ]
+          }
+        ]
+      }
+    }
+  },
+  "requiredProperties": [ "skills" ],
+  "$defs": {
+    "localizedString": {
+      "type": "string",
+      "oneOf": [
+        {
+          "pattern": "^[^\\$]",
+          "description": "WARNING: String will not be localized",
+          "deprecated": true
+        },
+        {
+          "pattern": "^\\$",
+          "description": "Localized string"
+        }
+      ]
+    },
+    "form": {
+      "description": "Look up a Form by a plugin file and Form ID (e.g. \"MyMod.esp|D62\")",
+      "type": "string",
+      "pattern": "^[^\\\\\\/:*?\"<>|]+\\.es[lmp]\\|(0[Xx])?[\\dA-Fa-f]{3,8}$"
+    }
+  }
+}

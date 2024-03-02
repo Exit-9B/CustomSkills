@@ -171,14 +171,6 @@ namespace CustomSkills
 		if (!factory)
 			return nullptr;
 
-		RE::BSString defaultName;
-		RE::BSString defaultDescription;
-		const auto vampireTree = dataHandler->LookupForm<RE::ActorValueInfo>(0x646, "Skyrim.esm");
-		if (vampireTree) {
-			defaultName = vampireTree->GetFullName();
-			vampireTree->GetDescription(defaultDescription, nullptr);
-		}
-
 		RE::BSResourceNiBinaryStream fileStream{ a_file.string() };
 
 		if (!fileStream.good())
@@ -248,17 +240,11 @@ namespace CustomSkills
 					SKSE::Translation::Translate(tr, tr);
 					sk->Info->fullName = tr;
 				}
-				else {
-					sk->Info->fullName = defaultName;
-				}
 
 				if (const auto& description = skill["description"]; description.isString()) {
 					std::string tr = description.asString();
 					SKSE::Translation::Translate(tr, tr);
 					sk->Description = std::move(tr);
-				}
-				else {
-					sk->Description = defaultDescription;
 				}
 
 				if (const auto& level = skill["level"]; level.isString()) {
