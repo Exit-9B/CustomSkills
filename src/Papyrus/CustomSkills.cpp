@@ -2,7 +2,7 @@
 
 #include "CustomSkills/CustomSkillsManager.h"
 
-#define REGISTER(vm, func)  vm->RegisterFunction(#func##sv, "CustomSkills"sv, func)
+#define REGISTER(vm, func) vm->RegisterFunction(#func##sv, "CustomSkills"sv, func)
 
 using namespace CustomSkills;
 
@@ -17,6 +17,11 @@ namespace Papyrus::CustomSkills
 	{
 		if (const auto group = CustomSkillsManager::FindSkillMenu(asSkillId)) {
 			CustomSkillsManager::OpenStatsMenu(group);
+		}
+		else if (const auto [origin, index] = CustomSkillsManager::FindSkillOrigin(asSkillId);
+				 origin) {
+			origin->LastSelectedTree = static_cast<std::uint32_t>(index);
+			CustomSkillsManager::OpenStatsMenu(origin);
 		}
 	}
 

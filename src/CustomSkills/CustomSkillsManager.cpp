@@ -214,6 +214,15 @@ namespace CustomSkills
 		return playerCharacter->GetBaseActorValue(a_skill);
 	}
 
+	std::shared_ptr<SkillGroup> CustomSkillsManager::FindSkillMenu(const std::string& a_key)
+	{
+		if (const auto i = _groupIds.find(a_key); i != _groupIds.end()) {
+			return i->second;
+		}
+
+		return nullptr;
+	}
+
 	std::shared_ptr<Skill> CustomSkillsManager::FindSkill(const std::string& a_key)
 	{
 		if (const auto i = _skillIds.find(a_key); i != _skillIds.end()) {
@@ -224,13 +233,14 @@ namespace CustomSkills
 		return nullptr;
 	}
 
-	std::shared_ptr<SkillGroup> CustomSkillsManager::FindSkillMenu(const std::string& a_key)
+	auto CustomSkillsManager::FindSkillOrigin(const std::string& a_key)
+		-> std::pair<std::shared_ptr<SkillGroup>, std::size_t>
 	{
-		if (const auto i = _groupIds.find(a_key); i != _groupIds.end()) {
+		if (const auto i = _skillIds.find(a_key); i != _skillIds.end()) {
 			return i->second;
 		}
 
-		return nullptr;
+		return {};
 	}
 
 	std::shared_ptr<Skill> CustomSkillsManager::FindSkillFromGlobalLevel(RE::TESGlobal* a_global)

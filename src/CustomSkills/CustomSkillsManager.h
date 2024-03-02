@@ -52,9 +52,12 @@ namespace CustomSkills
 
 		static float GetBaseSkillLevel(RE::ActorValue a_skill);
 
+		static std::shared_ptr<SkillGroup> FindSkillMenu(const std::string& a_key);
+
 		static std::shared_ptr<Skill> FindSkill(const std::string& a_key);
 
-		static std::shared_ptr<SkillGroup> FindSkillMenu(const std::string& a_key);
+		static auto FindSkillOrigin(const std::string& a_key)
+			-> std::pair<std::shared_ptr<SkillGroup>, std::size_t>;
 
 		static std::shared_ptr<Skill> FindSkillFromGlobalLevel(RE::TESGlobal* a_global);
 
