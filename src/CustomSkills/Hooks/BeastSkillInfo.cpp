@@ -10,7 +10,6 @@ namespace CustomSkills
 	void BeastSkillInfo::WriteHooks()
 	{
 		BeastSkillPatch();
-		SkillNamePatch();
 		ZoomOutPatch();
 	}
 
@@ -33,30 +32,6 @@ namespace CustomSkills
 			hook2.address() + 0x2,
 			hook2.address() + 0x7,
 			CustomSkillsManager::ShouldHideLevel);
-	}
-
-	void BeastSkillInfo::SkillNamePatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(
-			RE::Offset::StatsMenu::SetBeastSkillInfo,
-			0x20C);
-
-		REL::make_pattern<"E8">().match_or_fail(hook.address());
-
-		using GetSkillName_t = const char*(RE::ActorValue);
-		static REL::Relocation<GetSkillName_t> _GetSkillName;
-
-		auto GetSkillName = +[](RE::ActorValue a_skill) -> const char*
-		{
-			if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_skill)) {
-				return skill->GetName().data();
-			}
-			return _GetSkillName(a_skill);
-		};
-
-		// TRAMPOLINE: 14
-		auto& trampoline = SKSE::GetTrampoline();
-		_GetSkillName = trampoline.write_call<5>(hook.address(), GetSkillName);
 	}
 
 	void BeastSkillInfo::ZoomOutPatch()
