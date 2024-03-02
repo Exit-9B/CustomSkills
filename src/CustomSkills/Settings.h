@@ -7,7 +7,7 @@ namespace CustomSkills
 	class Settings final
 	{
 	public:
-		static auto ReadSkills() -> RE::BSTHashMap<RE::BSFixedString, std::shared_ptr<Skill>>;
+		static auto ReadSkills() -> std::map<std::string, std::shared_ptr<Skill>, util::iless>;
 
 	private:
 		inline static constexpr std::int32_t MaxNodes = 128;

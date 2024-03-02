@@ -86,65 +86,75 @@ namespace CustomSkills
 
 		static auto GetRequiredArraySize = +[]() -> std::uint32_t
 		{
-			return CustomSkillsManager::IsOurMenuMode() ? 5 : 90;
+			return CustomSkillsManager::GetCurrentSkillCount() * 5;
 		};
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch(std::uintptr_t a_hookAddr)
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
 			{
-				mov(rax, reinterpret_cast<std::uintptr_t>(GetRequiredArraySize));
-				call(rax);
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
+
+				call(ptr[rip + funcLbl]);
 				mov(ptr[rsp + 0x28], eax);
 				mov(rcx, ptr[r13 + 0x10]);
 				mov(rax, ptr[rcx]);
 				mov(ptr[rsp + 0x30], r14d);
-				jmp(ptr[rip]);
-				dq(a_hookAddr + 0x14);
+
+				jmp(ptr[rip + retnLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
 			}
 		};
 
-		auto patch = new Patch(hook.address());
+		auto patch = new Patch(
+			reinterpret_cast<std::uintptr_t>(GetRequiredArraySize),
+			hook.address() + 0x14);
 		patch->ready();
 
+		REL::safe_fill(hook.address(), REL::NOP, 0x14);
 		util::write_14branch(hook.address(), patch->getCode());
 	}
 
 	void MenuSetup::UpdateSkillPatch()
 	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::UpdateSkillList, 0x90);
+		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::UpdateSkillList, 0x69B);
 
-		REL::make_pattern<"80 3D ?? ?? ?? ?? 00">().match_or_fail(hook.address());
-
-		static auto ShouldSkipSkillUpdate = +[](std::int32_t a_idx) -> bool
-		{
-			return CustomSkillsManager::IsOurMenuMode()
-				? (a_idx > 0)
-				: CustomSkillsManager::IsBeastMode();
-		};
+		REL::make_pattern<"49 83 C4 04 41 83 FF 12">().match_or_fail(hook.address());
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch(std::uintptr_t a_hookAddr)
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
 			{
-				push(rcx);
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
 
-				mov(ecx, r15d);
-				mov(rax, reinterpret_cast<std::uintptr_t>(ShouldSkipSkillUpdate));
-				call(rax);
-				cmp(al, 0);
+				add(r12, 4);
+				call(ptr[rip + funcLbl]);
+				cmp(r15d, eax);
 
-				pop(rcx);
+				jmp(ptr[rip + retnLbl]);
 
-				jmp(ptr[rip]);
-				dq(a_hookAddr + 0x7);
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
 			}
 		};
 
-		auto patch = new Patch(hook.address());
+		auto patch = new Patch(
+			reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetCurrentSkillCount),
+			hook.address() + 0x8);
 		patch->ready();
 
 		auto& trampoline = SKSE::GetTrampoline();
+		REL::safe_fill(hook.address(), REL::NOP, 0x8);
 		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 

@@ -24,23 +24,9 @@ namespace CustomSkills
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::GetPerkCount, 0xE1);
 		REL::make_pattern<"0F B6 80">().match_or_fail(hook.address());
 
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_hookAddr)
-			{
-				mov(rax,
-					reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetCurrentPerkPoints));
-				call(rax);
-				jmp(ptr[rip]);
-				dq(a_hookAddr + 0x7);
-			}
-		};
-
-		auto patch = new Patch(hook.address());
-		patch->ready();
-
 		auto& trampoline = SKSE::GetTrampoline();
-		trampoline.write_branch<6>(hook.address(), patch->getCode());
+		REL::safe_fill(hook.address(), REL::NOP, 0x7);
+		trampoline.write_call<6>(hook.address(), &CustomSkillsManager::GetCurrentPerkPoints);
 	}
 
 	void SkillProgress::SelectPerkPatch()
@@ -56,19 +42,8 @@ namespace CustomSkills
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::PlayerSkills::GetSkillProgress);
 
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch()
-			{
-				mov(rax, reinterpret_cast<std::uintptr_t>(&GetSkillProgress));
-				jmp(rax);
-			}
-		};
-
-		Patch patch{};
-		patch.ready();
-
-		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
+		REL::safe_fill(hook.address(), REL::INT3, 0x50);
+		util::write_14branch(hook.address(), &GetSkillProgress);
 	}
 
 	void SkillProgress::SkillLevelPatch()
@@ -85,19 +60,28 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t a_funcAddr) : Xbyak::CodeGenerator(0x16)
 			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retn;
+
 				mov(ecx, edi);
-				mov(rax, reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetSkillLevel));
-				call(rax);
-				nop(0x8);
+				call(ptr[rip + funcLbl]);
+				jmp(retn);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retn);
 			}
 		};
 
-		Patch patch{};
+		Patch patch{ reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetSkillLevel) };
 		patch.ready();
-		assert(patch.getSize() == 0x16);
 
+		assert(patch.getSize() <= 0x16);
+
+		REL::safe_fill(hook.address(), REL::NOP, 0x16);
 		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
@@ -115,19 +99,28 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch()
+			Patch(std::uintptr_t a_funcAddr) : Xbyak::CodeGenerator(0x17)
 			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retn;
+
 				mov(ecx, r15d);
-				mov(rax, reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetSkillLevel));
-				call(rax);
-				nop(0x8);
+				call(ptr[rip + funcLbl]);
+				jmp(retn);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retn);
 			}
 		};
 
-		Patch patch{};
+		Patch patch{ reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetSkillLevel) };
 		patch.ready();
-		assert(patch.getSize() == 0x17);
 
+		assert(patch.getSize() <= 0x17);
+
+		REL::safe_fill(hook.address(), REL::NOP, 0x17);
 		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
@@ -139,41 +132,33 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch(std::uintptr_t a_hookAddr)
+			Patch(std::uintptr_t a_funcAddr)
 			{
+				Xbyak::Label funcLbl;
+
 				mov(ecx, ptr[rbp + 0x678]);
-				mov(rax,
-					reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel));
-				call(rax);
-				jmp(ptr[rip]);
-				dq(a_hookAddr + 0x9);
+				jmp(ptr[rip + funcLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
 			}
 		};
 
-		auto patch = new Patch(hook.address());
+		auto patch = new Patch(
+			reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::GetBaseSkillLevel));
 		patch->ready();
 
 		auto& trampoline = SKSE::GetTrampoline();
-		trampoline.write_branch<6>(hook.address(), patch->getCode());
+		REL::safe_fill(hook.address(), REL::NOP, 0x9);
+		trampoline.write_call<6>(hook.address(), patch->getCode());
 	}
 
 	void SkillProgress::RequirementsTextPatch()
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::BGSPerk::GetRequirementsText);
 
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch()
-			{
-				mov(rax, reinterpret_cast<std::uintptr_t>(&GetRequirementsText));
-				jmp(rax);
-			}
-		};
-
-		Patch patch{};
-		patch.ready();
-
-		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
+		REL::safe_fill(hook.address(), REL::INT3, 0x100);
+		util::write_14branch(hook.address(), &GetRequirementsText);
 	}
 
 	void SkillProgress::ModifyPerkCount(RE::StatsMenu* a_statsMenu, std::int32_t a_countDelta)

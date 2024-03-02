@@ -102,6 +102,19 @@ namespace CustomSkills
 		return RE::UI::GetSingleton()->IsMenuOpen(MENU_NAME);
 	}
 
+	std::uint32_t CustomSkillsManager::GetCurrentSkillCount()
+	{
+		if (IsOurMenuMode()) {
+			return 1;
+		}
+		else if (IsBeastMode()) {
+			return 1;
+		}
+		else {
+			return 18;
+		}
+	}
+
 	std::uint32_t CustomSkillsManager::GetCurrentPerkPoints()
 	{
 		if (IsOurMenuMode()) {
@@ -197,7 +210,7 @@ namespace CustomSkills
 		return playerCharacter->GetBaseActorValue(a_skill);
 	}
 
-	std::shared_ptr<Skill> CustomSkillsManager::FindSkill(const RE::BSFixedString& a_key)
+	std::shared_ptr<Skill> CustomSkillsManager::FindSkill(const std::string& a_key)
 	{
 		if (auto i = _skillIds.find(a_key); i != _skillIds.end()) {
 			return i->second;
@@ -311,6 +324,6 @@ namespace CustomSkills
 		bool modeOn = _menuState != MenuState::None && _menuSkill != nullptr;
 		*IsSingleSkillMode.get() = modeOn || IsBeastMode();
 		*IsUsingBeastNif.get() = modeOn ? !_menuSkill->NormalNif : IsBeastMode();
-		*ShouldHideLevel.get() = (modeOn && _menuSkill->Level == nullptr) || IsBeastMode();
+		*ShouldHideLevel.get() = modeOn ? _menuSkill->Level == nullptr : IsBeastMode();
 	}
 }

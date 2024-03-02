@@ -55,6 +55,14 @@ namespace util
 		REL::safe_write(a_src, std::addressof(mem), sizeof(mem));
 	}
 
+	struct iless
+	{
+		bool operator()(const std::string& a_str1, const std::string& a_str2) const
+		{
+			return ::_stricmp(a_str1.data(), a_str2.data()) < 0;
+		}
+	};
+
 	inline bool starts_with(const std::string& a_str, const std::string& a_subStr)
 	{
 		return a_str.rfind(a_subStr, 0) == 0;

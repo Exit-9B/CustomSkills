@@ -79,22 +79,24 @@ namespace CustomSkills
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch(std::uintptr_t a_hookAddr)
+			Patch(std::uintptr_t a_funcAddr)
 			{
-				lea(rcx, ptr[r14 + 0x20]);
-				mov(rax, reinterpret_cast<std::uintptr_t>(GetSkillName));
-				call(rax);
+				Xbyak::Label funcLbl;
 
-				jmp(ptr[rip]);
-				dq(a_hookAddr + 0x7);
+				lea(rcx, ptr[r14 + 0x20]);
+				jmp(ptr[rip + funcLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
 			}
 		};
 
-		auto patch = new Patch(hook.address());
+		auto patch = new Patch(reinterpret_cast<std::uintptr_t>(GetSkillName));
 		patch->ready();
 
 		auto& trampoline = SKSE::GetTrampoline();
-		trampoline.write_branch<6>(hook.address(), patch->getCode());
+		REL::safe_fill(hook.address(), REL::NOP, 0x7);
+		trampoline.write_call<6>(hook.address(), patch->getCode());
 	}
 
 	void SkillInfo::SkillDescriptionPatch()
