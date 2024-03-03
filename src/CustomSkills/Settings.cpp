@@ -141,6 +141,8 @@ namespace CustomSkills
 			{ "Sneak"sv, RE::ActorValue::kSneak },
 			{ "Speechcraft"sv, RE::ActorValue::kSpeech },
 			{ "TwoHanded"sv, RE::ActorValue::kTwoHanded },
+			{ "VampirePerks"sv, RE::ActorValue::kVampirePerks },
+			{ "WerewolfPerks"sv, RE::ActorValue::kWerewolfPerks },
 		});
 		static_assert(std::ranges::is_sorted(SKILLS));
 

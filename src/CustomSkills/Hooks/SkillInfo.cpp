@@ -69,6 +69,12 @@ namespace CustomSkills
 					legendary.SetNumber(
 						legendaryAvailable ? playerSkills->data->legendaryLevels[idx] : 0);
 				}
+				else if (
+					actorValue == RE::ActorValue::kWerewolfPerks ||
+					actorValue == RE::ActorValue::kVampirePerks) {
+					level.SetString(""sv);
+					percent.SetNumber(player->GetActorValue(actorValue));
+				}
 			}
 		}
 

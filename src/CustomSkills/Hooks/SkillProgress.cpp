@@ -58,6 +58,11 @@ namespace CustomSkills
 			if (const auto skill = CustomSkillsManager::GetCurrentSkill(actorValue)) {
 				return skill->Level == nullptr;
 			}
+			else if (
+				actorValue == RE::ActorValue::kWerewolfPerks ||
+				actorValue == RE::ActorValue::kVampirePerks) {
+				return true;
+			}
 			return CustomSkillsManager::IsBeastMode();
 		};
 

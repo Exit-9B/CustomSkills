@@ -353,7 +353,10 @@ namespace CustomSkills
 		if (modeOn) {
 			*IsSingleSkillMode = _menuSkills->Skills.size() <= 1;
 			*ShouldHideLevel = _menuSkills->Skills.size() == 1 &&
-				_menuSkills->Skills[0]->Level == nullptr;
+				(_menuSkills->Skills[0]
+					 ? _menuSkills->Skills[0]->Level == nullptr
+					 : (_menuSkills->ActorValues[0] == RE::ActorValue::kWerewolfPerks ||
+						_menuSkills->ActorValues[0] == RE::ActorValue::kVampirePerks));
 			*CameraRightPoint = _menuSkills->CameraRightPoint;
 		}
 		else {
