@@ -98,7 +98,8 @@ namespace CustomSkills
 
 	bool CustomSkillsManager::IsMenuControlsEnabled()
 	{
-		return RE::ControlMap::GetSingleton()->IsMainFourControlsEnabled();
+		static REL::Relocation<bool()> func{ REL::ID(55484) };
+		return func();
 	}
 
 	bool CustomSkillsManager::IsStatsMenuOpen()
