@@ -113,7 +113,7 @@ namespace CustomSkills
 			return static_cast<std::uint32_t>(_menuSkills->Skills.size());
 		}
 		else if (IsBeastMode()) {
-			return 1;
+			return 2;
 		}
 		else {
 			return 18;
