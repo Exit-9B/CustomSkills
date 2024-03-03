@@ -19,7 +19,7 @@ namespace CustomSkills
 			RE::Offset::LegendarySkillResetConfirmCallback::Run,
 			0x20D);
 
-		using MakeLegendary_t = void(RE::PlayerCharacter::PlayerSkills*, RE::ActorValue);
+		using MakeLegendary_t = void(RE::PlayerCharacter::PlayerSkills::*)(RE::ActorValue);
 		static REL::Relocation<MakeLegendary_t> _MakeLegendary;
 
 		auto MakeLegendary = +[](RE::PlayerCharacter::PlayerSkills* a_playerSkills,

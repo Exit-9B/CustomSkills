@@ -21,7 +21,7 @@ namespace CustomSkills
 		util::write_disp(
 			hook1.address() + 0x2,
 			hook1.address() + 0x7,
-			CustomSkillsManager::ShouldHideLevel);
+			CustomSkillsManager::UseBeastSkillInfo);
 
 		auto hook2 = REL::Relocation<std::uintptr_t>(
 			RE::Offset::StatsMenu::UpdateSkillList,
@@ -31,7 +31,7 @@ namespace CustomSkills
 		util::write_disp(
 			hook2.address() + 0x2,
 			hook2.address() + 0x7,
-			CustomSkillsManager::ShouldHideLevel);
+			CustomSkillsManager::UseBeastSkillInfo);
 	}
 
 	void BeastSkillInfo::ZoomOutPatch()
@@ -43,6 +43,6 @@ namespace CustomSkills
 		util::write_disp(
 			hook.address() + 0x2,
 			hook.address() + 0x7,
-			CustomSkillsManager::ShouldHideLevel);
+			CustomSkillsManager::UseBeastSkillInfo);
 	}
 }

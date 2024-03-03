@@ -68,8 +68,8 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	Update::WriteHooks();
 	MenuSetup::WriteHooks();
-	Constellation::WriteHooks();
 	Navigation::WriteHooks();
+	Constellation::WriteHooks();
 	SkillInfo::WriteHooks();
 	SkillProgress::WriteHooks();
 	Legendary::WriteHooks();

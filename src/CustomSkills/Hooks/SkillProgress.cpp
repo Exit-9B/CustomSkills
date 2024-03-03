@@ -10,92 +10,12 @@ namespace CustomSkills
 {
 	void SkillProgress::WriteHooks()
 	{
+		ActorValueOwnerPatch();
+		SkillProgressPatch();
 		CurrentPerkPointsPatch();
 		SelectPerkPatch();
-		SkillProgressPatch();
 		HideLevelPatch();
-		ActorValueOwnerPatch();
 		RequirementsTextPatch();
-	}
-
-	void SkillProgress::CurrentPerkPointsPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::GetPerkCount, 0xE1);
-		REL::make_pattern<"0F B6 80">().match_or_fail(hook.address());
-
-		// TRAMPOLINE: 8
-		auto& trampoline = SKSE::GetTrampoline();
-		REL::safe_fill(hook.address(), REL::NOP, 0x7);
-		trampoline.write_call<6>(hook.address(), &CustomSkillsManager::GetCurrentPerkPoints);
-	}
-
-	void SkillProgress::SelectPerkPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::SelectPerk, 0x1CD);
-		REL::make_pattern<"E8">().match_or_fail(hook.address());
-
-		// TRAMPOLINE: 14
-		auto& trampoline = SKSE::GetTrampoline();
-		_ModifyPerkCount = trampoline.write_call<5>(hook.address(), &ModifyPerkCount);
-	}
-
-	void SkillProgress::SkillProgressPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::PlayerSkills::GetSkillProgress);
-
-		REL::safe_fill(hook.address(), REL::INT3, 0x50);
-		util::write_14branch(hook.address(), &GetSkillProgress);
-	}
-
-	void SkillProgress::HideLevelPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::SetSkillInfo, 0x108F);
-
-		REL::make_pattern<"80 3D ?? ?? ?? ?? 00">().match_or_fail(hook.address());
-
-		auto ShouldHideLevel = +[](RE::ActorValue actorValue) -> bool
-		{
-			if (const auto skill = CustomSkillsManager::GetCurrentSkill(actorValue)) {
-				return skill->Level == nullptr;
-			}
-			else if (
-				actorValue == RE::ActorValue::kWerewolfPerks ||
-				actorValue == RE::ActorValue::kVampirePerks) {
-				return true;
-			}
-			return CustomSkillsManager::IsBeastMode();
-		};
-
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
-			{
-				Xbyak::Label funcLbl;
-				Xbyak::Label retnLbl;
-
-				mov(ecx, ptr[rbp + 0x678]);
-				call(ptr[rip + funcLbl]);
-				cmp(al, 0);
-				mov(rax, ptr[rbp - 0x70]);
-				jmp(ptr[rip + retnLbl]);
-
-				L(funcLbl);
-				dq(a_funcAddr);
-
-				L(retnLbl);
-				dq(a_retnAddr);
-			}
-		};
-
-		auto patch = new Patch(
-			reinterpret_cast<std::uintptr_t>(ShouldHideLevel),
-			hook.address() + 0x7);
-		patch->ready();
-
-		// TRAMPOLINE: 8
-		auto& trampoline = SKSE::GetTrampoline();
-		REL::safe_fill(hook.address(), REL::NOP, 0x7);
-		trampoline.write_branch<6>(hook.address(), patch->getCode());
 	}
 
 	void SkillProgress::ActorValueOwnerPatch()
@@ -106,14 +26,14 @@ namespace CustomSkills
 		using GetActorValue_t = float (RE::PlayerCharacter::*)(RE::ActorValue) const;
 		static REL::Relocation<GetActorValue_t> _GetActorValue;
 
-		auto GetActorValue = +[](const RE::PlayerCharacter* player, RE::ActorValue actorValue)
+		auto GetActorValue = +[](const RE::PlayerCharacter* a_player, RE::ActorValue a_actorValue)
 			-> float
 		{
-			if (const auto skill = CustomSkillsManager::GetCurrentSkill(actorValue)) {
+			if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_actorValue)) {
 				return skill->GetLevel();
 			}
 
-			return _GetActorValue(player, actorValue);
+			return _GetActorValue(a_player, a_actorValue);
 		};
 
 		_GetActorValue = vtbl.write_vfunc(1, GetActorValue);
@@ -121,14 +41,14 @@ namespace CustomSkills
 		using GetBaseActorValue_t = float (RE::PlayerCharacter::*)(RE::ActorValue) const;
 		static REL::Relocation<GetBaseActorValue_t> _GetBaseActorValue;
 
-		auto GetBaseActorValue = +[](const RE::PlayerCharacter* player, RE::ActorValue actorValue)
-			-> float
+		auto GetBaseActorValue =
+			+[](const RE::PlayerCharacter* a_player, RE::ActorValue a_actorValue) -> float
 		{
-			if (const auto skill = CustomSkillsManager::GetCurrentSkill(actorValue)) {
+			if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_actorValue)) {
 				return skill->GetLevel();
 			}
 
-			return _GetBaseActorValue(player, actorValue);
+			return _GetBaseActorValue(a_player, a_actorValue);
 		};
 
 		_GetBaseActorValue = vtbl.write_vfunc(3, GetBaseActorValue);
@@ -137,57 +57,19 @@ namespace CustomSkills
 		static REL::Relocation<SetBaseActorValue_t> _SetBaseActorValue;
 
 		auto SetBaseActorValue =
-			+[](RE::PlayerCharacter* player, RE::ActorValue actorValue, float value)
+			+[](RE::PlayerCharacter* a_player, RE::ActorValue a_actorValue, float a_value)
 		{
-			if (const auto skill = CustomSkillsManager::GetCurrentSkill(actorValue)) {
+			if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_actorValue)) {
 				if (skill->Level) {
-					skill->Level->value = value;
+					skill->Level->value = a_value;
 				}
 			}
 			else {
-				_SetBaseActorValue(player, actorValue);
+				_SetBaseActorValue(a_player, a_actorValue);
 			}
 		};
 
 		_SetBaseActorValue = vtbl.write_vfunc(4, SetBaseActorValue);
-	}
-
-	void SkillProgress::RequirementsTextPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::BGSPerk::GetRequirementsText);
-
-		REL::safe_fill(hook.address(), REL::INT3, 0x100);
-		util::write_14branch(hook.address(), &GetRequirementsText);
-	}
-
-	void SkillProgress::ModifyPerkCount(RE::StatsMenu* a_statsMenu, std::int32_t a_countDelta)
-	{
-		if (CustomSkillsManager::IsOurMenuMode()) {
-			if (a_countDelta > 0) {
-				if (const auto player = RE::PlayerCharacter::GetSingleton()) {
-					std::int32_t oldCount = player->perkCount;
-					std::int32_t newCount = oldCount + a_countDelta;
-					if (newCount > oldCount && oldCount != 255) {
-						player->perkCount = static_cast<std::uint8_t>((std::min)(255, newCount));
-					}
-				}
-			}
-			else {
-				std::int32_t oldCount = CustomSkillsManager::GetCurrentPerkPoints();
-				std::int32_t newCount = oldCount + a_countDelta;
-
-				if (newCount < 0) {
-					newCount = 0;
-				}
-				else if (newCount > 255) {
-					newCount = 255;
-				}
-				CustomSkillsManager::SetCurrentPerkPoints(static_cast<std::uint8_t>(newCount));
-			}
-		}
-		else {
-			_ModifyPerkCount(a_statsMenu, a_countDelta);
-		}
 	}
 
 	void SkillProgress::GetSkillProgress(
@@ -225,7 +107,7 @@ namespace CustomSkills
 			}
 		}
 		else {
-			std::size_t idx = util::to_underlying(a_skill) - 6;
+			const std::size_t idx = util::to_underlying(a_skill) - 6;
 			auto& data = a_playerSkills->data->skills[idx];
 			*a_level = data.level;
 			*a_xp = data.xp;
@@ -233,6 +115,126 @@ namespace CustomSkills
 			if (a_legendary) {
 				*a_legendary = a_playerSkills->data->legendaryLevels[idx];
 			}
+		}
+	}
+
+	void SkillProgress::CurrentPerkPointsPatch()
+	{
+		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::GetPerkCount, 0xE1);
+		REL::make_pattern<"0F B6 80">().match_or_fail(hook.address());
+
+		// TRAMPOLINE: 8
+		auto& trampoline = SKSE::GetTrampoline();
+		REL::safe_fill(hook.address(), REL::NOP, 0x7);
+		trampoline.write_call<6>(hook.address(), &CustomSkillsManager::GetCurrentPerkPoints);
+	}
+
+	void SkillProgress::SelectPerkPatch()
+	{
+		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::SelectPerk, 0x1CD);
+		REL::make_pattern<"E8">().match_or_fail(hook.address());
+
+		// TRAMPOLINE: 14
+		auto& trampoline = SKSE::GetTrampoline();
+		_ModifyPerkCount = trampoline.write_call<5>(
+			hook.address(),
+			&SkillProgress::ModifyPerkCount);
+	}
+
+	void SkillProgress::SkillProgressPatch()
+	{
+		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::PlayerSkills::GetSkillProgress);
+
+		REL::safe_fill(hook.address(), REL::INT3, 0x50);
+		util::write_14branch(hook.address(), &SkillProgress::GetSkillProgress);
+	}
+
+	void SkillProgress::HideLevelPatch()
+	{
+		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::SetSkillInfo, 0x108F);
+
+		REL::make_pattern<"80 3D ?? ?? ?? ?? 00">().match_or_fail(hook.address());
+
+		auto UseBeastSkillInfo = +[](RE::ActorValue a_actorValue) -> bool
+		{
+			if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_actorValue)) {
+				return skill->Level == nullptr;
+			}
+			else if (
+				a_actorValue == RE::ActorValue::kWerewolfPerks ||
+				a_actorValue == RE::ActorValue::kVampirePerks) {
+				return true;
+			}
+			return CustomSkillsManager::IsBeastMode();
+		};
+
+		struct Patch : Xbyak::CodeGenerator
+		{
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
+			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
+
+				mov(ecx, ptr[rbp + 0x678]);
+				call(ptr[rip + funcLbl]);
+				cmp(al, 0);
+				mov(rax, ptr[rbp - 0x70]);
+				jmp(ptr[rip + retnLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
+			}
+		};
+
+		auto patch = new Patch(
+			reinterpret_cast<std::uintptr_t>(UseBeastSkillInfo),
+			hook.address() + 0x7);
+		patch->ready();
+
+		// TRAMPOLINE: 8
+		auto& trampoline = SKSE::GetTrampoline();
+		REL::safe_fill(hook.address(), REL::NOP, 0x7);
+		trampoline.write_branch<6>(hook.address(), patch->getCode());
+	}
+
+	void SkillProgress::RequirementsTextPatch()
+	{
+		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::BGSPerk::GetRequirementsText);
+
+		REL::safe_fill(hook.address(), REL::INT3, 0x100);
+		util::write_14branch(hook.address(), &GetRequirementsText);
+	}
+
+	void SkillProgress::ModifyPerkCount(RE::StatsMenu* a_statsMenu, std::int32_t a_countDelta)
+	{
+		if (CustomSkillsManager::IsOurMenuMode()) {
+			if (a_countDelta > 0) {
+				if (const auto player = RE::PlayerCharacter::GetSingleton()) {
+					std::int32_t oldCount = player->perkCount;
+					std::int32_t newCount = oldCount + a_countDelta;
+					if (newCount > oldCount && oldCount != 255) {
+						player->perkCount = static_cast<std::uint8_t>((std::min)(255, newCount));
+					}
+				}
+			}
+			else {
+				std::int32_t oldCount = CustomSkillsManager::GetCurrentPerkPoints();
+				std::int32_t newCount = oldCount + a_countDelta;
+
+				if (newCount < 0) {
+					newCount = 0;
+				}
+				else if (newCount > 255) {
+					newCount = 255;
+				}
+				CustomSkillsManager::SetCurrentPerkPoints(static_cast<std::uint8_t>(newCount));
+			}
+		}
+		else {
+			_ModifyPerkCount(a_statsMenu, a_countDelta);
 		}
 	}
 

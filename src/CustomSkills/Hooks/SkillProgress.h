@@ -8,20 +8,20 @@ namespace CustomSkills
 		static void WriteHooks();
 
 	private:
+		// Get/set values for custom skills
+		static void ActorValueOwnerPatch();
+
+		// Show skill level and XP
+		static void SkillProgressPatch();
+
 		// Show available perk points
 		static void CurrentPerkPointsPatch();
 
 		// Spend perk points
 		static void SelectPerkPatch();
 
-		// Show skill level and XP
-		static void SkillProgressPatch();
-
 		// Hide skill level in perk description
 		static void HideLevelPatch();
-
-		// Get skill levels for custom skills
-		static void ActorValueOwnerPatch();
 
 		// Set requirements text when using GetGlobalValue
 		static void RequirementsTextPatch();

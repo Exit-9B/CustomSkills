@@ -8,13 +8,13 @@ namespace CustomSkills
 		static void WriteHooks();
 
 	private:
+		// Compute index of current angle
+		static void SelectedTreePatch();
+
 		// Prevent tree switching
 		static void LockRotationPatch();
 
 		// Normalize rotation speed
 		static void RotationSpeedPatch();
-
-		// Compute index of current angle
-		static void SelectedTreePatch();
 	};
 }

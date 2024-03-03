@@ -9,9 +9,56 @@ namespace CustomSkills
 {
 	void Navigation::WriteHooks()
 	{
+		SelectedTreePatch();
 		LockRotationPatch();
 		RotationSpeedPatch();
-		SelectedTreePatch();
+	}
+
+	void Navigation::SelectedTreePatch()
+	{
+		auto hook = REL::Relocation<std::uintptr_t>(
+			RE::Offset::StatsMenu::UpdateSelectedTree,
+			0x5E);
+		REL::make_pattern<"8B 87 10 03 00 00">().match_or_fail(hook.address());
+
+		auto ComputeSelectedTree = +[](const RE::StatsMenu* a_menu, float a_angle) -> std::uint32_t
+		{
+			const float skillAngle = 360.0f / a_menu->numSelectableTrees;
+
+			a_angle += skillAngle * 0.5f;
+
+			if (a_angle >= 360.0f) {
+				a_angle = 0.0f;
+			}
+
+			return static_cast<std::uint32_t>(a_angle / skillAngle);
+		};
+
+		struct Patch : Xbyak::CodeGenerator
+		{
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
+			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
+
+				movaps(xmm1, xmm2);
+				mov(rcx, rdi);
+				call(ptr[rip + funcLbl]);
+				mov(ebx, eax);
+				jmp(ptr[rip + retnLbl]);
+				nop();
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
+			}
+		};
+
+		Patch
+			patch{ reinterpret_cast<std::uintptr_t>(ComputeSelectedTree), hook.address() + 0xFA };
+		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
 	void Navigation::LockRotationPatch()
@@ -30,9 +77,9 @@ namespace CustomSkills
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::Rotate, 0x35A);
 		REL::make_pattern<"F3 0F 59 F2 41 0F 2F F0">().match_or_fail(hook.address());
 
-		auto ModRotationSpeed = +[](std::uint32_t numTrees, float t) -> float
+		auto ModRotationSpeed = +[](std::uint32_t a_numTrees, float a_t) -> float
 		{
-			return t * 18.0f / numTrees;
+			return a_t * 18.0f / a_numTrees;
 		};
 
 		struct Patch : Xbyak::CodeGenerator
@@ -66,52 +113,5 @@ namespace CustomSkills
 		auto& trampoline = SKSE::GetTrampoline();
 		REL::safe_fill(hook.address(), REL::NOP, 0x8);
 		trampoline.write_branch<6>(hook.address(), patch->getCode());
-	}
-
-	void Navigation::SelectedTreePatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(
-			RE::Offset::StatsMenu::UpdateSelectedTree,
-			0x5E);
-		REL::make_pattern<"8B 87 10 03 00 00">().match_or_fail(hook.address());
-
-		auto ComputeSelectedTree = +[](RE::StatsMenu* menu, float angle) -> std::uint32_t
-		{
-			const float skillAngle = 360.0f / menu->numSelectableTrees;
-
-			angle += skillAngle * 0.5f;
-
-			if (angle >= 360.0f) {
-				angle = 0.0f;
-			}
-
-			return static_cast<std::uint32_t>(angle / skillAngle);
-		};
-
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
-			{
-				Xbyak::Label funcLbl;
-				Xbyak::Label retnLbl;
-
-				movaps(xmm1, xmm2);
-				mov(rcx, rdi);
-				call(ptr[rip + funcLbl]);
-				mov(ebx, eax);
-				jmp(ptr[rip + retnLbl]);
-				nop();
-
-				L(funcLbl);
-				dq(a_funcAddr);
-
-				L(retnLbl);
-				dq(a_retnAddr);
-			}
-		};
-
-		Patch
-			patch{ reinterpret_cast<std::uintptr_t>(ComputeSelectedTree), hook.address() + 0xFA };
-		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 }

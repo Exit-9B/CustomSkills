@@ -11,9 +11,6 @@ namespace CustomSkills
 		// Setup custom menu properties
 		static void MenuConstructorPatch();
 
-		// Create stars for more than 18 skills
-		static void CreateStarsPatch();
-
 		// Skill dome nif
 		static void SkillDomeArtPatch();
 
@@ -22,6 +19,9 @@ namespace CustomSkills
 
 		// Get custom skill tree
 		static void SkillTreePatch();
+
+		// Create stars for more than 18 skills
+		static void CreateStarsPatch();
 
 		// Save last selected tree
 		static void CloseMenuPatch();

@@ -70,7 +70,7 @@ namespace CustomSkills
 		static void UpdateVars();
 
 		inline static REL::Relocation<bool*> IsSingleSkillMode;
-		inline static REL::Relocation<bool*> ShouldHideLevel;
+		inline static REL::Relocation<bool*> UseBeastSkillInfo;
 		inline static REL::Relocation<std::uint32_t*> CameraRightPoint;
 
 		using SkillLocation = std::pair<std::shared_ptr<SkillGroup>, std::size_t>;

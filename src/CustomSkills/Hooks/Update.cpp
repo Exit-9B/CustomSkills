@@ -19,21 +19,26 @@ namespace CustomSkills
 		// TRAMPOLINE: 14
 		auto& trampoline = SKSE::GetTrampoline();
 
+		using DoFrame_t = void(RE::Main::*)();
+		static REL::Relocation<DoFrame_t> _DoFrame;
+
+		auto DoFrame = +[](RE::Main* a_main)
+		{
+			CustomSkillsManager::UpdateMenu();
+			CustomSkillsManager::UpdateSkills();
+			return _DoFrame(a_main);
+		};
+
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::Main::OnIdle, 0x3E);
 		REL::make_pattern<"E8">().match_or_fail(hook.address());
 
-		_DoFrame = trampoline.write_call<5>(hook.address(), &DoFrame);
+		_DoFrame = trampoline.write_call<5>(hook.address(), DoFrame);
 	}
 
 	void Update::SetBeastModePatch()
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::OpenStatsMenu, 0x63);
 		REL::make_pattern<"88 1D">().match_or_fail(hook.address());
-
-		static auto SetBeastMode = +[](bool a_beastMode)
-		{
-			CustomSkillsManager::SetBeastMode(a_beastMode);
-		};
 
 		struct Patch : Xbyak::CodeGenerator
 		{
@@ -63,7 +68,7 @@ namespace CustomSkills
 		};
 
 		auto patch = new Patch(
-			reinterpret_cast<std::uintptr_t>(SetBeastMode),
+			reinterpret_cast<std::uintptr_t>(&CustomSkillsManager::SetBeastMode),
 			hook.address() + 0x6);
 		patch->ready();
 
@@ -86,12 +91,5 @@ namespace CustomSkills
 		auto& trampoline = SKSE::GetTrampoline();
 		REL::safe_fill(hook.address(), REL::NOP, 0x7);
 		trampoline.write_call<6>(hook.address(), ExitMode);
-	}
-
-	void Update::DoFrame(RE::Main* a_main)
-	{
-		CustomSkillsManager::UpdateMenu();
-		CustomSkillsManager::UpdateSkills();
-		return _DoFrame(a_main);
 	}
 }

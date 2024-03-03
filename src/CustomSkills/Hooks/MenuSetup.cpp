@@ -11,10 +11,10 @@ namespace CustomSkills
 	void MenuSetup::WriteHooks()
 	{
 		MenuConstructorPatch();
-		CreateStarsPatch();
 		SkillDomeArtPatch();
 		CameraPatch();
 		SkillTreePatch();
+		CreateStarsPatch();
 		CloseMenuPatch();
 	}
 
@@ -23,7 +23,7 @@ namespace CustomSkills
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::Create, 0x5D);
 		REL::make_pattern<"E8">().match_or_fail(hook.address());
 
-		using StatsMenu_ctor_t = RE::StatsMenu* (*)(RE::StatsMenu*);
+		using StatsMenu_ctor_t = RE::StatsMenu* (RE::StatsMenu*);
 		static REL::Relocation<StatsMenu_ctor_t> _StatsMenu_ctor;
 
 		auto SetupStatsMenu = +[](RE::StatsMenu* a_mem)
@@ -56,74 +56,30 @@ namespace CustomSkills
 		_StatsMenu_ctor = trampoline.write_call<5>(hook.address(), SetupStatsMenu);
 	}
 
-	void MenuSetup::CreateStarsPatch()
-	{
-		auto hook1 = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::ProcessMessage, 0x9A3);
-		auto hook2 = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::ProcessMessage, 0xCF8);
-		REL::make_pattern<"83 BE D0 01 00 00 18">().match_or_fail(hook1.address());
-		REL::make_pattern<"83 BE D0 01 00 00 18">().match_or_fail(hook2.address());
-
-		auto GetMaxSkillIndex = +[]() -> std::uint32_t
-		{
-			return CustomSkillsManager::GetCurrentSkillCount() + 6;
-		};
-
-		struct Patch : Xbyak::CodeGenerator
-		{
-			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
-			{
-				Xbyak::Label funcLbl;
-				Xbyak::Label retnLbl;
-
-				call(ptr[rip + funcLbl]);
-				cmp(dword[rsi + 0x1D0], eax);
-				jmp(ptr[rip + retnLbl]);
-
-				L(funcLbl);
-				dq(a_funcAddr);
-
-				L(retnLbl);
-				dq(a_retnAddr);
-			}
-		};
-
-		// TRAMPOLINE: 16
-		auto& trampoline = SKSE::GetTrampoline();
-
-		auto patch1 = new Patch(
-			reinterpret_cast<std::uintptr_t>(GetMaxSkillIndex),
-			hook1.address() + 0x7);
-		patch1->ready();
-
-		REL::safe_fill(hook1.address(), REL::NOP, 0x7);
-		trampoline.write_branch<6>(hook1.address(), patch1->getCode());
-
-		auto patch2 = new Patch(
-			reinterpret_cast<std::uintptr_t>(GetMaxSkillIndex),
-			hook2.address() + 0x7);
-		patch2->ready();
-
-		REL::safe_fill(hook2.address(), REL::NOP, 0x7);
-		trampoline.write_branch<6>(hook2.address(), patch2->getCode());
-	}
-
 	void MenuSetup::SkillDomeArtPatch()
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::Ctor, 0x413);
 		REL::make_pattern<"E8">().match_or_fail(hook.address());
 
-		using RequestModelAsync_t = std::uint32_t(const char*, void**, void*, void*);
+		using RequestModelAsync_t = RE::BSResource::ErrorCode(
+			const char*,
+			RE::BSResource::ID**,
+			const void*,
+			std::uint32_t);
 		static REL::Relocation<RequestModelAsync_t> _RequestModelAsync;
 
 		auto RequestSkillDomeModel =
-			+[](const char* a_path, void** a_id, void* a_params, void* a_arg4) -> std::uint32_t
+			+[](const char* a_path,
+				RE::BSResource::ID** a_handle,
+				const void* a_params,
+				std::uint32_t a_arg4) -> RE::BSResource::ErrorCode
 		{
 			auto path = a_path;
 			if (CustomSkillsManager::IsOurMenuMode() &&
 				!CustomSkillsManager::_menuSkills->Skydome.empty()) {
 				path = CustomSkillsManager::_menuSkills->Skydome.c_str();
 			}
-			return _RequestModelAsync(path, a_id, a_params, a_arg4);
+			return _RequestModelAsync(path, a_handle, a_params, a_arg4);
 		};
 
 		// TRAMPOLINE: 14
@@ -192,6 +148,57 @@ namespace CustomSkills
 		trampoline.write_branch<6>(hook.address(), GetActorValueInfo);
 	}
 
+	void MenuSetup::CreateStarsPatch()
+	{
+		auto hook1 = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::ProcessMessage, 0x9A3);
+		auto hook2 = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::ProcessMessage, 0xCF8);
+		REL::make_pattern<"83 BE D0 01 00 00 18">().match_or_fail(hook1.address());
+		REL::make_pattern<"83 BE D0 01 00 00 18">().match_or_fail(hook2.address());
+
+		auto GetMaxSkillIndex = +[]() -> std::uint32_t
+		{
+			return CustomSkillsManager::GetCurrentSkillCount() + 6;
+		};
+
+		struct Patch : Xbyak::CodeGenerator
+		{
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
+			{
+				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
+
+				call(ptr[rip + funcLbl]);
+				cmp(dword[rsi + 0x1D0], eax);
+				jmp(ptr[rip + retnLbl]);
+
+				L(funcLbl);
+				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
+			}
+		};
+
+		// TRAMPOLINE: 16
+		auto& trampoline = SKSE::GetTrampoline();
+
+		auto patch1 = new Patch(
+			reinterpret_cast<std::uintptr_t>(GetMaxSkillIndex),
+			hook1.address() + 0x7);
+		patch1->ready();
+
+		REL::safe_fill(hook1.address(), REL::NOP, 0x7);
+		trampoline.write_branch<6>(hook1.address(), patch1->getCode());
+
+		auto patch2 = new Patch(
+			reinterpret_cast<std::uintptr_t>(GetMaxSkillIndex),
+			hook2.address() + 0x7);
+		patch2->ready();
+
+		REL::safe_fill(hook2.address(), REL::NOP, 0x7);
+		trampoline.write_branch<6>(hook2.address(), patch2->getCode());
+	}
+
 	void MenuSetup::CloseMenuPatch()
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::DtorImpl, 0x39);
@@ -202,7 +209,7 @@ namespace CustomSkills
 			"89 05">()
 			.match_or_fail(hook.address());
 
-		auto SaveLastSelectedTree = +[](RE::StatsMenu* a_statsMenu)
+		auto SaveLastSelectedTree = +[](const RE::StatsMenu* a_statsMenu)
 		{
 			static REL::Relocation<std::uint32_t*> lastSelectedTree{
 				RE::Offset::StatsMenu::LastSelectedTree

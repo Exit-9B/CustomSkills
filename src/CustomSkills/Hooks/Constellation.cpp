@@ -25,7 +25,8 @@ namespace CustomSkills
 
 		auto SetCImageShader = +[](RE::BSShaderProperty* shader, std::uint32_t index)
 		{
-			CustomSkillsManager::_cImageControllers[index].SetShader(shader);
+			auto& controller = CustomSkillsManager::_cImageControllers[index];
+			controller.SetShader(shader);
 		};
 
 		struct Patch : Xbyak::CodeGenerator
@@ -57,9 +58,9 @@ namespace CustomSkills
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::Rotate, 0x3C6);
 
-		auto EnterTree = +[](std::uint32_t index)
+		auto EnterTree = +[](std::uint32_t a_index)
 		{
-			auto& controller = CustomSkillsManager::_cImageControllers[index];
+			auto& controller = CustomSkillsManager::_cImageControllers[a_index];
 			controller.Enter();
 		};
 
@@ -92,9 +93,9 @@ namespace CustomSkills
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::Animate, 0x14B);
 
-		auto EnterTree = +[](std::uint32_t index)
+		auto EnterTree = +[](std::uint32_t a_index)
 		{
-			auto& controller = CustomSkillsManager::_cImageControllers[index];
+			auto& controller = CustomSkillsManager::_cImageControllers[a_index];
 			controller.Enter();
 		};
 
@@ -129,9 +130,9 @@ namespace CustomSkills
 			RE::Offset::StatsMenu::ProcessRotateEvent,
 			0x141);
 
-		auto ExitTree = +[](std::uint32_t index)
+		auto ExitTree = +[](std::uint32_t a_index)
 		{
-			auto& controller = CustomSkillsManager::_cImageControllers[index];
+			auto& controller = CustomSkillsManager::_cImageControllers[a_index];
 			if (controller.shader && !*CustomSkillsManager::IsSingleSkillMode) {
 				controller.Exit();
 			}
@@ -169,9 +170,9 @@ namespace CustomSkills
 			RE::Offset::StatsMenu::ProcessRotateEvent,
 			0x2A1);
 
-		auto ExitTree = +[](std::uint32_t index)
+		auto ExitTree = +[](std::uint32_t a_index)
 		{
-			auto& controller = CustomSkillsManager::_cImageControllers[index];
+			auto& controller = CustomSkillsManager::_cImageControllers[a_index];
 			if (controller.shader) {
 				controller.Exit();
 			}
@@ -207,15 +208,15 @@ namespace CustomSkills
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::GotoNode, 0xB9);
 
-		auto SetSelectedTree = +[](RE::StatsMenu* statsMenu, std::uint32_t newIndex)
+		auto SetSelectedTree = +[](RE::StatsMenu* a_statsMenu, std::uint32_t a_newIndex)
 		{
-			std::uint32_t oldIndex = statsMenu->selectedTree;
+			const std::uint32_t oldIndex = a_statsMenu->selectedTree;
 			auto& controllers = CustomSkillsManager::_cImageControllers;
 
 			controllers[oldIndex].Exit();
 
-			statsMenu->selectedTree = newIndex;
-			controllers[newIndex].Enter();
+			a_statsMenu->selectedTree = a_newIndex;
+			controllers[a_newIndex].Enter();
 		};
 
 		struct Patch : Xbyak::CodeGenerator
@@ -249,9 +250,9 @@ namespace CustomSkills
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::ProcessMessage, 0x10B0);
 
-		auto UpdateConstellation = +[](std::uint32_t index)
+		auto UpdateConstellation = +[](std::uint32_t a_index)
 		{
-			CustomSkillsManager::_cImageControllers[index].Update();
+			CustomSkillsManager::_cImageControllers[a_index].Update();
 		};
 
 		struct Patch : Xbyak::CodeGenerator

@@ -13,7 +13,7 @@ namespace CustomSkills
 		// TRAMPOLINE: 6
 		auto& trampoline = SKSE::GetTrampoline();
 		IsSingleSkillMode = reinterpret_cast<std::uintptr_t>(trampoline.allocate(1));
-		ShouldHideLevel = reinterpret_cast<std::uintptr_t>(trampoline.allocate(1));
+		UseBeastSkillInfo = reinterpret_cast<std::uintptr_t>(trampoline.allocate(1));
 		CameraRightPoint = reinterpret_cast<std::uintptr_t>(trampoline.allocate(4));
 		UpdateVars();
 	}
@@ -352,7 +352,7 @@ namespace CustomSkills
 		const bool modeOn = _menuState != MenuState::None && _menuSkills != nullptr;
 		if (modeOn) {
 			*IsSingleSkillMode = _menuSkills->Skills.size() <= 1;
-			*ShouldHideLevel = _menuSkills->Skills.size() == 1 &&
+			*UseBeastSkillInfo = _menuSkills->Skills.size() == 1 &&
 				(_menuSkills->Skills[0]
 					 ? _menuSkills->Skills[0]->Level == nullptr
 					 : (_menuSkills->ActorValues[0] == RE::ActorValue::kWerewolfPerks ||
@@ -362,7 +362,7 @@ namespace CustomSkills
 		else {
 			const bool beastMode = IsBeastMode();
 			*IsSingleSkillMode = beastMode;
-			*ShouldHideLevel = beastMode;
+			*UseBeastSkillInfo = beastMode;
 			*CameraRightPoint = beastMode ? 2 : 1;
 		}
 	}
