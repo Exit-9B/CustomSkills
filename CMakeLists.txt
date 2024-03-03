@@ -39,19 +39,17 @@ target_include_directories(
 		${SIMPLEINI_INCLUDE_DIRS}
 )
 
-if(SkyrimSE_PATH)
-	Papyrus_Add(
-		"PapyrusAPI"
-		GAME ${SkyrimSE_PATH}
-		IMPORTS
-			"${PROJECT_SOURCE_DIR}/scripts"
-		SOURCES
-			"${PROJECT_SOURCE_DIR}/scripts/CustomSkills.psc"
-		OPTIMIZE
-		ANONYMIZE
-		COMPONENT ${CMAKE_INSTALL_DEFAULT_COMPONENT_NAME}
-	)
-endif()
+Papyrus_Add(
+	"PapyrusAPI"
+	GAME ${SkyrimSE_PATH}
+	MODE SkyrimSE
+	IMPORTS
+		"${PROJECT_SOURCE_DIR}/scripts"
+	SOURCES
+		"${PROJECT_SOURCE_DIR}/scripts/CustomSkills.psc"
+	ANONYMIZE
+	COMPONENT ${CMAKE_INSTALL_DEFAULT_COMPONENT_NAME}
+)
 
 set(CPACK_GENERATOR "7Z")
 set(CPACK_PACKAGE_FILE_NAME ${PROJECT_NAME}-${PROJECT_VERSION})
