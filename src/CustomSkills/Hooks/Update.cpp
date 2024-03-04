@@ -26,6 +26,7 @@ namespace CustomSkills
 		{
 			CustomSkillsManager::UpdateMenu();
 			CustomSkillsManager::UpdateSkills();
+			CustomSkillsManager::UpdateTraining();
 			return _DoFrame(a_main);
 		};
 

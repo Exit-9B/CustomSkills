@@ -40,26 +40,6 @@ namespace CustomSkills
 		}
 	}
 
-	void CustomSkillsManager::ShowLevelup(std::string_view a_name, std::int32_t a_level)
-	{
-		static auto sSkillIncreased = RE::GameSettingCollection::GetSingleton()->GetSetting(
-			"sSkillIncreased");
-
-		if (!sSkillIncreased) {
-			return;
-		}
-
-		const char* text = sSkillIncreased->GetString();
-		if (!text || text[0] == '\0') {
-			return;
-		}
-
-		char buf[200];
-		std::snprintf(buf, 200, text, a_name.data(), a_level);
-
-		Game::ShowHUDMessage(RE::HUDData::Type::kSkillIncrease, buf, nullptr, nullptr);
-	}
-
 	void CustomSkillsManager::CloseStatsMenu()
 	{
 		if (const auto uiMessageQueue = RE::UIMessageQueue::GetSingleton()) {
@@ -80,6 +60,18 @@ namespace CustomSkills
 
 		Game::FadeOutGame(true, true, 1.0f, true, 0.0f);
 		Game::OpenStatsMenu(false);
+	}
+
+	void CustomSkillsManager::ShowTrainingMenu(
+		std::shared_ptr<Skill> a_skill,
+		std::uint32_t a_maxLevel,
+		RE::Actor* a_trainer)
+	{
+		_trainingSkill = a_skill;
+		_trainingMax = a_maxLevel;
+		SetTrainingState(MenuState::WaitingToOpen);
+
+		Game::ShowTrainingMenu(a_trainer);
 	}
 
 	void CustomSkillsManager::NotifyOpeningSkills()
@@ -166,6 +158,11 @@ namespace CustomSkills
 		UpdateVars();
 	}
 
+	void CustomSkillsManager::SetTrainingState(MenuState a_state)
+	{
+		_trainingState = a_state;
+	}
+
 	void CustomSkillsManager::SetBeastMode(bool a_beastMode)
 	{
 		REL::Relocation<bool*> isBeastMode{ REL::ID(RE::Offset::IsBeastMode) };
@@ -182,6 +179,11 @@ namespace CustomSkills
 	{
 		REL::Relocation<bool*> isBeastMode{ RE::Offset::IsBeastMode };
 		return *isBeastMode.get();
+	}
+
+	bool CustomSkillsManager::IsOurTrainingMode()
+	{
+		return _trainingState != MenuState::None && _trainingSkill != nullptr;
 	}
 
 	float CustomSkillsManager::GetSkillLevel(RE::ActorValue a_skill)
@@ -258,6 +260,9 @@ namespace CustomSkills
 		if (_menuSkills && index < _menuSkills->Skills.size()) {
 			return _menuSkills->Skills[index];
 		}
+		else if (_trainingSkill && index == 0) {
+			return _trainingSkill;
+		}
 
 		return nullptr;
 	}
@@ -304,7 +309,7 @@ namespace CustomSkills
 					if (amt > 0) {
 						sk->ShowLevelup->value = 0;
 
-						ShowLevelup(sk->GetName(), amt);
+						Game::ShowSkillIncreasedMessage(sk->GetName(), amt);
 						return;
 					}
 				}
@@ -364,6 +369,45 @@ namespace CustomSkills
 			*IsSingleSkillMode = beastMode;
 			*UseBeastSkillInfo = beastMode;
 			*CameraRightPoint = beastMode ? 2 : 1;
+		}
+	}
+
+	void CustomSkillsManager::UpdateTraining()
+	{
+		if (RE::Main::GetSingleton()->freezeTime || RE::UI::GetSingleton()->GameIsPaused()) {
+			return;
+		}
+
+		const bool isMenuOpen = RE::UI::GetSingleton()->IsMenuOpen(RE::TrainingMenu::MENU_NAME);
+		if (isMenuOpen || !IsMenuControlsEnabled()) {
+			return;
+		}
+
+		switch (_trainingState) {
+		case MenuState::None:
+			break;
+
+		case MenuState::WaitingToOpen:
+			if (isMenuOpen) {
+				SetTrainingState(MenuState::Open);
+			}
+			break;
+
+		case MenuState::Open:
+			if (!isMenuOpen) {
+				SetTrainingState(MenuState::None);
+				_trainingSkill = nullptr;
+				_trainingMax = 0;
+			}
+			break;
+
+		case MenuState::WaitingToClose:
+			if (!isMenuOpen) {
+				SetTrainingState(MenuState::None);
+				_trainingSkill = nullptr;
+				_trainingMax = 0;
+			}
+			break;
 		}
 	}
 }

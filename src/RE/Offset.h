@@ -65,6 +65,17 @@ namespace RE
 			inline constexpr auto UpdateSkillList = REL::ID(52525);
 		}
 
+		namespace TESClass
+		{
+			inline constexpr auto GetMaximumTrainingLevel = REL::ID(24450);
+		}
+
+		namespace TrainingMenu
+		{
+			inline constexpr auto SetTrainer = REL::ID(52666);
+			inline constexpr auto Train = REL::ID(52667);
+		}
+
 		inline constexpr auto DebugMessageBox = REL::ID(55376);
 		inline constexpr auto FadeOutGame = REL::ID(52847);
 		inline constexpr auto GetActorValueInfo = REL::ID(27202);
@@ -77,5 +88,6 @@ namespace RE
 		inline constexpr auto LastChosenMenuIndex = REL::ID(383192);
 		inline constexpr auto OpenStatsMenu = REL::ID(52516);
 		inline constexpr auto ShowHUDMessage = REL::ID(51646);
+		inline constexpr auto ShowTrainingMenu = REL::ID(52942);
 	}
 }
