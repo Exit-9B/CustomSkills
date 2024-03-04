@@ -18,9 +18,5 @@ namespace CustomSkills
 
 		// Update variables when closing menu
 		static void ExitModePatch();
-
-		static void DoFrame(RE::Main* a_main);
-
-		inline static REL::Relocation<decltype(&DoFrame)> _DoFrame;
 	};
 }

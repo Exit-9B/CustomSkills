@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 
 project(
 	CustomSkills
-	VERSION 2.0.2
+	VERSION 3.0.0
 	LANGUAGES CXX
 )
 
@@ -31,12 +31,19 @@ SKSEPlugin_Add(
 		src/PCH/PCH.h
 )
 
-find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
+find_path(SIMPLEINI_INCLUDE_DIRS "SimpleIni.h")
+find_package(jsoncpp CONFIG REQUIRED)
 
 target_include_directories(
 	${PROJECT_NAME}
 	PRIVATE
 		${SIMPLEINI_INCLUDE_DIRS}
+)
+
+target_link_libraries(
+	${PROJECT_NAME}
+	PRIVATE
+		jsoncpp_static
 )
 
 if(SkyrimSE_PATH)

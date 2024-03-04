@@ -8,8 +8,8 @@ namespace CustomSkills
 		static void WriteHooks();
 
 	private:
-		// Open menu at correct index
-		static void MenuPropertiesPatch();
+		// Setup custom menu properties
+		static void MenuConstructorPatch();
 
 		// Skill dome nif
 		static void SkillDomeArtPatch();
@@ -17,13 +17,13 @@ namespace CustomSkills
 		// Fix camera when using beast skill nif
 		static void CameraPatch();
 
-		// Create array for only one skill
-		static void SkillArrayPatch();
+		// Get custom skill tree
+		static void SkillTreePatch();
 
-		// Update data for only one skill
-		static void UpdateSkillPatch();
-
-		// Create perk nodes for only one skill
+		// Create stars for more than 18 skills
 		static void CreateStarsPatch();
+
+		// Save last selected tree
+		static void CloseMenuPatch();
 	};
 }

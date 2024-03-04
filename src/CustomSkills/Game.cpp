@@ -30,6 +30,13 @@ namespace CustomSkills
 		return func(a_actorValue);
 	}
 
+	const char* Game::GetActorValueColor(RE::ActorValue a_actorValue)
+	{
+		using func_t = decltype(&GetActorValueColor);
+		REL::Relocation<func_t> func{ RE::Offset::GetActorValueColor };
+		return func(a_actorValue);
+	}
+
 	bool Game::IsGamePaused()
 	{
 		if (const auto main = RE::Main::GetSingleton()) {
