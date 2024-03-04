@@ -26,7 +26,7 @@ namespace Papyrus::CustomSkills
 		}
 	}
 
-	void ShowCustomTrainingMenu(
+	void ShowTrainingMenu(
 		RE::StaticFunctionTag*,
 		std::string asSkillId,
 		std::int32_t aiMaxLevel,
@@ -42,7 +42,7 @@ namespace Papyrus::CustomSkills
 		std::string asSkillId,
 		std::int32_t aiSkillLevel)
 	{
-		if (auto skill = CustomSkillsManager::FindSkill(asSkillId)) {
+		if (const auto skill = CustomSkillsManager::FindSkill(asSkillId)) {
 			Game::ShowSkillIncreasedMessage(skill->GetName(), aiSkillLevel);
 		}
 	}
@@ -51,7 +51,7 @@ namespace Papyrus::CustomSkills
 	{
 		REGISTER(a_vm, GetAPIVersion);
 		REGISTER(a_vm, OpenCustomSkillMenu);
-		REGISTER(a_vm, ShowCustomTrainingMenu);
+		REGISTER(a_vm, ShowTrainingMenu);
 		REGISTER(a_vm, ShowSkillIncreaseMessage);
 
 		return true;

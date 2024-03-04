@@ -8,7 +8,7 @@ int Function GetAPIVersion() global native
 Function OpenCustomSkillMenu(string asSkillId) global native
 
 ; Displays the training menu for the given skill.
-Function ShowCustomTrainingMenu(string asSkillId, int aiMaxLevel, Actor akTrainer) global native
+Function ShowTrainingMenu(string asSkillId, int aiMaxLevel, Actor akTrainer) global native
 
 ; Displays the skill increase message on the HUD for the given skill and level.
 Function ShowSkillIncreaseMessage(string asSkillId, int aiSkillLevel) global native

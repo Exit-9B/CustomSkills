@@ -14,11 +14,19 @@ namespace CustomSkills
 		void Increment(std::uint32_t a_count)
 		{
 			if (Level) {
-				Level->value += a_count;
+				if (Level->value >= 100.0f) {
+					return;
+				}
+
+				for (; a_count && Level->value < 100.0f; --a_count) {
+					Level->value = static_cast<float>(static_cast<std::int32_t>(Level->value) + 1);
+				}
+
 				Game::ShowSkillIncreasedMessage(
 					GetName(),
 					static_cast<std::int32_t>(Level->value));
 			}
+
 			if (Ratio) {
 				Ratio->value = 0.0f;
 			}

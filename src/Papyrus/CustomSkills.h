@@ -8,7 +8,7 @@ namespace Papyrus
 
 		void OpenCustomSkillMenu(RE::StaticFunctionTag*, std::string asSkillId);
 
-		void ShowCustomTrainingMenu(
+		void ShowTrainingMenu(
 			RE::StaticFunctionTag*,
 			std::string asSkillId,
 			std::int32_t aiMaxLevel,
