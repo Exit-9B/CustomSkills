@@ -374,15 +374,7 @@ namespace CustomSkills
 
 	void CustomSkillsManager::UpdateTraining()
 	{
-		if (RE::Main::GetSingleton()->freezeTime || RE::UI::GetSingleton()->GameIsPaused()) {
-			return;
-		}
-
 		const bool isMenuOpen = RE::UI::GetSingleton()->IsMenuOpen(RE::TrainingMenu::MENU_NAME);
-		if (isMenuOpen || !IsMenuControlsEnabled()) {
-			return;
-		}
-
 		switch (_trainingState) {
 		case MenuState::None:
 			break;
