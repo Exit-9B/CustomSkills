@@ -27,18 +27,24 @@ namespace CustomSkills
 
 			std::string key = filename.stem().string();
 
-			if (const auto sk = ReadSkill(entry.path())) {
+			if (const auto group = ReadSkills(entry.path())) {
 				if (::_stricmp(key.data(), "SKILLS") == 0) {
 					REL::Relocation<std::uint32_t*> lastSelectedTree{
 						RE::Offset::StatsMenu::LastSelectedTree
 					};
 
-					if (*lastSelectedTree < sk->Skills.size()) {
-						sk->LastSelectedTree = *lastSelectedTree;
+					if (*lastSelectedTree < group->Skills.size()) {
+						group->LastSelectedTree = *lastSelectedTree;
+					}
+
+					for (const auto& skill : group->Skills) {
+						if (skill) {
+							skill->IsMainSkill = true;
+						}
 					}
 				}
 
-				skills.emplace(std::move(key), std::move(sk));
+				skills.emplace(std::move(key), std::move(group));
 			}
 		}
 
@@ -168,13 +174,14 @@ namespace CustomSkills
 		const auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::TESObjectACTI>();
 		const auto obj = factory ? factory->Create() : nullptr;
 		if (obj && a_keyword) {
-			obj->keywords = RE::calloc<RE::BGSKeyword*>(1, sizeof(RE::BGSKeyword*));
+			obj->keywords = RE::calloc<RE::BGSKeyword*>(1);
 			obj->keywords[0] = a_keyword;
+			obj->numKeywords = 1;
 		}
 		return obj;
 	}
 
-	auto Settings::ReadSkill(const std::filesystem::path& a_file) -> std::shared_ptr<SkillGroup>
+	auto Settings::ReadSkills(const std::filesystem::path& a_file) -> std::shared_ptr<SkillGroup>
 	{
 		const auto dataHandler = RE::TESDataHandler::GetSingleton();
 		if (!dataHandler)

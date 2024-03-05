@@ -11,7 +11,10 @@ namespace CustomSkills
 
 		float GetLevel() const { return Level ? Level->value : 0.0f; }
 
-		void Advance(float a_magnitude);
+		void Advance(
+			float a_magnitude,
+			bool a_isSkillUse = true,
+			bool a_hideNotification = false);
 
 		void Increment(std::uint32_t a_count);
 
@@ -28,6 +31,7 @@ namespace CustomSkills
 		RE::TESForm* AdvanceObject = nullptr;
 		std::string ColorStr;
 		std::int32_t ColorLast = -1;
+		bool IsMainSkill = false;
 	};
 
 	class SkillGroup final

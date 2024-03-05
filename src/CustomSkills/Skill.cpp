@@ -2,6 +2,23 @@
 
 namespace CustomSkills
 {
+	static float CalcLevelThreshold(
+		std::int32_t a_currentRank,
+		float a_improveMult,
+		float a_improveOffset)
+	{
+		static const RE::Setting* const
+			fSkillUseCurve = RE::GameSettingCollection::GetSingleton()->GetSetting(
+				"fSkillUseCurve");
+
+		const float useCurve = fSkillUseCurve ? fSkillUseCurve->GetFloat() : 1.95f;
+
+		return std::fma(
+			std::powf(static_cast<float>(a_currentRank), useCurve),
+			a_improveMult,
+			a_improveOffset);
+	}
+
 	static void IncreasePlayerCharacterXP(std::int32_t a_rankGained)
 	{
 		static const RE::Setting* const
@@ -14,7 +31,7 @@ namespace CustomSkills
 		player->skills->data->xp += a_rankGained * xpPerSkillRank;
 	}
 
-	void Skill::Advance(float a_magnitude)
+	void Skill::Advance(float a_magnitude, bool a_isSkillUse, bool a_hideNotification)
 	{
 		if (!Level || !Ratio || !Info || !Info->skill)
 			return;
@@ -26,13 +43,7 @@ namespace CustomSkills
 		const float improveMult = Info->skill->improveMult;
 		const float improveOffset = Info->skill->improveOffset;
 
-		static const RE::Setting* const
-			fSkillUseCurve = RE::GameSettingCollection::GetSingleton()->GetSetting(
-				"fSkillUseCurve");
-
-		const float useCurve = fSkillUseCurve ? fSkillUseCurve->GetFloat() : 1.95f;
-
-		float xp = std::fma(a_magnitude, useMult, useOffset);
+		float xp = a_isSkillUse ? std::fma(a_magnitude, useMult, useOffset) : a_magnitude;
 		const auto player = RE::PlayerCharacter::GetSingleton();
 		player->advanceSkill = RE::ActorValue::kNone;
 		player->advanceObject = AdvanceObject;
@@ -47,16 +58,15 @@ namespace CustomSkills
 		float ratio = (std::min)((std::max)(Ratio->value, 0.0f), 1.0f);
 
 		while (level < 100) {
-			float levelThreshold = std::fma(
-				std::powf(static_cast<float>(level), useCurve),
-				improveMult,
-				improveOffset);
+			const float levelThreshold = CalcLevelThreshold(level, improveMult, improveOffset);
 
 			if (ratio + xp / levelThreshold >= 1.0f) {
 				xp -= levelThreshold * (1.0f + ratio);
-				++level;
-				IncreasePlayerCharacterXP(level);
 				ratio = 0.0f;
+				++level;
+				if (IsMainSkill) {
+					IncreasePlayerCharacterXP(level);
+				}
 			}
 			else {
 				ratio += xp / levelThreshold;
@@ -69,32 +79,43 @@ namespace CustomSkills
 		Level->value = static_cast<float>(level);
 		Ratio->value = ratio;
 
-		if (levelIncreased) {
+		if (!a_hideNotification && levelIncreased) {
 			Game::ShowSkillIncreasedMessage(GetName(), level);
 		}
 	}
 
 	void Skill::Increment(std::uint32_t a_count)
 	{
-		if (a_count == 0)
+		if (a_count == 0 || !Info || !Info->skill)
 			return;
 
+		const float improveMult = Info->skill->improveMult;
+		const float improveOffset = Info->skill->improveOffset;
+
 		if (Level) {
-			if (Level->value >= 100.0f) {
+			std::int32_t level = static_cast<std::int32_t>(Level->value);
+			if (level >= 100) {
 				return;
 			}
 
-			for (; a_count && Level->value < 100.0f; --a_count) {
-				const std::int32_t rankGained = static_cast<std::int32_t>(Level->value) + 1;
-				Level->value = static_cast<float>(rankGained);
-				IncreasePlayerCharacterXP(rankGained);
+			const std::uint32_t count = (std::min)(a_count, 100U - level);
+			if (Ratio) {
+				for (std::uint32_t i = 0; i < count; ++i) {
+					const float xp = CalcLevelThreshold(level, improveMult, improveOffset) *
+						(1.0f - Ratio->value);
+					Advance(xp, false, i < count - 1);
+				}
 			}
-
-			Game::ShowSkillIncreasedMessage(GetName(), static_cast<std::int32_t>(Level->value));
-		}
-
-		if (Ratio) {
-			Ratio->value = 0.0f;
+			else {
+				for (std::uint32_t i = 0; i < count; ++i) {
+					++level;
+					if (IsMainSkill) {
+						IncreasePlayerCharacterXP(level);
+					}
+				}
+				Level->value = static_cast<float>(level);
+				Game::ShowSkillIncreasedMessage(GetName(), level);
+			}
 		}
 	}
 
