@@ -13,6 +13,9 @@ namespace CustomSkills
 
 		void Increment(std::uint32_t a_count)
 		{
+			if (a_count == 0)
+				return;
+
 			if (Level) {
 				if (Level->value >= 100.0f) {
 					return;
