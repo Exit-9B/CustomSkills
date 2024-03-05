@@ -1,6 +1,7 @@
 #include "CustomSkills.h"
 
 #include "CustomSkills/CustomSkillsManager.h"
+#include "CustomSkills/Game.h"
 
 #define REGISTER(vm, func) vm->RegisterFunction(#func##sv, "CustomSkills"sv, func)
 
@@ -10,7 +11,7 @@ namespace Papyrus::CustomSkills
 {
 	std::int32_t GetAPIVersion(RE::StaticFunctionTag*)
 	{
-		return 1;
+		return 2;
 	}
 
 	void OpenCustomSkillMenu(RE::StaticFunctionTag*, std::string asSkillId)
@@ -25,13 +26,24 @@ namespace Papyrus::CustomSkills
 		}
 	}
 
+	void ShowTrainingMenu(
+		RE::StaticFunctionTag*,
+		std::string asSkillId,
+		std::int32_t aiMaxLevel,
+		RE::Actor* akTrainer)
+	{
+		if (const auto skill = CustomSkillsManager::FindSkill(asSkillId)) {
+			CustomSkillsManager::ShowTrainingMenu(skill, aiMaxLevel, akTrainer);
+		}
+	}
+
 	void ShowSkillIncreaseMessage(
 		RE::StaticFunctionTag*,
 		std::string asSkillId,
 		std::int32_t aiSkillLevel)
 	{
-		if (auto skill = CustomSkillsManager::FindSkill(asSkillId)) {
-			CustomSkillsManager::ShowLevelup(skill->GetName(), aiSkillLevel);
+		if (const auto skill = CustomSkillsManager::FindSkill(asSkillId)) {
+			Game::ShowSkillIncreasedMessage(skill->GetName(), aiSkillLevel);
 		}
 	}
 
@@ -39,6 +51,7 @@ namespace Papyrus::CustomSkills
 	{
 		REGISTER(a_vm, GetAPIVersion);
 		REGISTER(a_vm, OpenCustomSkillMenu);
+		REGISTER(a_vm, ShowTrainingMenu);
 		REGISTER(a_vm, ShowSkillIncreaseMessage);
 
 		return true;

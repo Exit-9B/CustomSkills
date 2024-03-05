@@ -20,11 +20,14 @@ namespace CustomSkills
 			WaitingToClose = 3,
 		};
 
-		static void ShowLevelup(std::string_view a_name, std::int32_t a_level);
-
 		static void CloseStatsMenu();
 
 		static void OpenStatsMenu(std::shared_ptr<SkillGroup> a_group);
+
+		static void ShowTrainingMenu(
+			std::shared_ptr<Skill> a_skill,
+			std::uint32_t a_maxLevel,
+			RE::Actor* a_trainer);
 
 		static void NotifyOpeningSkills();
 
@@ -40,11 +43,15 @@ namespace CustomSkills
 
 		static void SetMenuState(MenuState a_state);
 
+		static void SetTrainingState(MenuState a_state);
+
 		static void SetBeastMode(bool a_beastMode);
 
 		static bool IsOurMenuMode();
 
 		static bool IsBeastMode();
+
+		static bool IsOurTrainingMode();
 
 		static float GetSkillLevel(RE::ActorValue a_skill);
 
@@ -69,6 +76,8 @@ namespace CustomSkills
 
 		static void UpdateVars();
 
+		static void UpdateTraining();
+
 		inline static REL::Relocation<bool*> IsSingleSkillMode;
 		inline static REL::Relocation<bool*> UseBeastSkillInfo;
 		inline static REL::Relocation<std::uint32_t*> CameraRightPoint;
@@ -82,5 +91,9 @@ namespace CustomSkills
 		inline static std::vector<CImageController> _cImageControllers;
 		inline static MenuState _menuState = MenuState::None;
 		inline static RE::BSFixedString _colorOfSkillNormal = "#FFFFFF";
+
+		inline static std::shared_ptr<Skill> _trainingSkill = nullptr;
+		inline static std::uint32_t _trainingMax = 0;
+		inline static MenuState _trainingState = MenuState::None;
 	};
 }

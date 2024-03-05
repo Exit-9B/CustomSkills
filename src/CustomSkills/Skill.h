@@ -1,16 +1,36 @@
 #pragma once
 
+#include "CustomSkills/Game.h"
+
 namespace CustomSkills
 {
 	class Skill final
 	{
 	public:
-		std::string_view GetName() const
-		{
-			return Info ? std::string_view(Info->fullName) : ""sv;
-		}
+		std::string_view GetName() const { return Info ? std::string_view(Info->fullName) : ""sv; }
 
 		float GetLevel() const { return Level ? Level->value : 0.0f; }
+
+		void Increment(std::uint32_t a_count)
+		{
+			if (Level) {
+				if (Level->value >= 100.0f) {
+					return;
+				}
+
+				for (; a_count && Level->value < 100.0f; --a_count) {
+					Level->value = static_cast<float>(static_cast<std::int32_t>(Level->value) + 1);
+				}
+
+				Game::ShowSkillIncreasedMessage(
+					GetName(),
+					static_cast<std::int32_t>(Level->value));
+			}
+
+			if (Ratio) {
+				Ratio->value = 0.0f;
+			}
+		}
 
 		bool UpdateColor()
 		{
