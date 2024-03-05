@@ -23,14 +23,15 @@ namespace CustomSkills
 			if (!keyword)
 				continue;
 
-			const auto& str = keyword->formEditorID;
+			const auto str = std::string_view(keyword->formEditorID);
 			constexpr auto prefix = "CustomSkillBook_"sv;
-			constexpr auto pos = prefix.size();
-			if (str.size() <= pos || ::_strnicmp(str.data(), prefix.data(), pos) != 0) {
+			if (str.size() <= prefix.size() ||
+				::_strnicmp(str.data(), prefix.data(), prefix.size()) != 0) {
 				continue;
 			}
 
-			const auto skill = CustomSkillsManager::FindSkill(str.data() + pos);
+			const auto skill = CustomSkillsManager::FindSkill(
+				std::string(str.substr(prefix.size())));
 			if (!skill)
 				continue;
 
@@ -59,7 +60,6 @@ namespace CustomSkills
 			{
 				Xbyak::Label funcLbl;
 				Xbyak::Label learnedSkill;
-				Xbyak::Label noSkill;
 
 				mov(r13d, 0xFFFFFFFF);
 				mov(rcx, r15);
