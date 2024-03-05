@@ -70,6 +70,11 @@ namespace RE
 			inline constexpr auto GetMaximumTrainingLevel = REL::ID(24450);
 		}
 
+		namespace TESObjectBOOK
+		{
+			inline constexpr auto Read = REL::ID(17842);
+		}
+
 		namespace TrainingMenu
 		{
 			inline constexpr auto SetTrainer = REL::ID(52666);
