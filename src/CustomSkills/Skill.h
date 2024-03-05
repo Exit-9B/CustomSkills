@@ -1,11 +1,36 @@
 #pragma once
 
+#include "CustomSkills/Game.h"
+
 namespace CustomSkills
 {
 	class Skill final
 	{
 	public:
+		std::string_view GetName() const { return Info ? std::string_view(Info->fullName) : ""sv; }
+
 		float GetLevel() const { return Level ? Level->value : 0.0f; }
+
+		void Increment(std::uint32_t a_count)
+		{
+			if (Level) {
+				if (Level->value >= 100.0f) {
+					return;
+				}
+
+				for (; a_count && Level->value < 100.0f; --a_count) {
+					Level->value = static_cast<float>(static_cast<std::int32_t>(Level->value) + 1);
+				}
+
+				Game::ShowSkillIncreasedMessage(
+					GetName(),
+					static_cast<std::int32_t>(Level->value));
+			}
+
+			if (Ratio) {
+				Ratio->value = 0.0f;
+			}
+		}
 
 		bool UpdateColor()
 		{
@@ -23,35 +48,28 @@ namespace CustomSkills
 			return true;
 		}
 
-		void LegendaryReset(float a_resetLevel)
-		{
-			if (Level) {
-				Level->value = a_resetLevel;
-			}
-
-			if (Ratio) {
-				Ratio->value = 0.0f;
-			}
-
-			if (Legendary) {
-				Legendary->value++;
-			}
-		}
-
-		std::string Name;
+		std::string ID;
 		std::string Description;
-		std::string Skydome;
 		RE::TESGlobal* Level = nullptr;
 		RE::TESGlobal* Ratio = nullptr;
 		RE::TESGlobal* ShowLevelup = nullptr;
-		RE::TESGlobal* OpenMenu = nullptr;
-		RE::TESGlobal* PerkPoints = nullptr;
 		RE::TESGlobal* Legendary = nullptr;
 		RE::TESGlobal* Color = nullptr;
-		RE::TESGlobal* DebugReload = nullptr;
-		bool NormalNif = false;
-		RE::BGSSkillPerkTreeNode* SkillTree = nullptr;
+		RE::ActorValueInfo* Info = nullptr;
 		std::string ColorStr;
 		std::int32_t ColorLast = -1;
+	};
+
+	class SkillGroup final
+	{
+	public:
+		std::string Skydome;
+		std::uint32_t CameraRightPoint = 2;
+		std::uint32_t LastSelectedTree = 0;
+		RE::TESGlobal* OpenMenu = nullptr;
+		RE::TESGlobal* PerkPoints = nullptr;
+		RE::TESGlobal* DebugReload = nullptr;
+		std::vector<std::shared_ptr<Skill>> Skills;
+		std::vector<RE::ActorValue> ActorValues;
 	};
 }

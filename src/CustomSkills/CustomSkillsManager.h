@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CImageController.h"
 #include "Skill.h"
 
 namespace CustomSkills
@@ -19,11 +20,16 @@ namespace CustomSkills
 			WaitingToClose = 3,
 		};
 
-		static void ShowLevelup(std::string_view a_name, std::int32_t a_level);
-
 		static void CloseStatsMenu();
 
-		static void OpenStatsMenu(std::shared_ptr<Skill> a_skill);
+		static void OpenStatsMenu(std::shared_ptr<SkillGroup> a_group);
+
+		static void ShowTrainingMenu(
+			std::shared_ptr<Skill> a_skill,
+			std::uint32_t a_maxLevel,
+			RE::Actor* a_trainer);
+
+		static void NotifyOpeningSkills();
 
 		static bool IsMenuControlsEnabled();
 
@@ -37,11 +43,15 @@ namespace CustomSkills
 
 		static void SetMenuState(MenuState a_state);
 
+		static void SetTrainingState(MenuState a_state);
+
 		static void SetBeastMode(bool a_beastMode);
 
 		static bool IsOurMenuMode();
 
 		static bool IsBeastMode();
+
+		static bool IsOurTrainingMode();
 
 		static float GetSkillLevel(RE::ActorValue a_skill);
 
@@ -49,9 +59,16 @@ namespace CustomSkills
 
 		static float GetBaseSkillLevel(RE::ActorValue a_skill);
 
+		static std::shared_ptr<SkillGroup> FindSkillMenu(const std::string& a_key);
+
 		static std::shared_ptr<Skill> FindSkill(const std::string& a_key);
 
+		static auto FindSkillOrigin(const std::string& a_key)
+			-> std::pair<std::shared_ptr<SkillGroup>, std::size_t>;
+
 		static std::shared_ptr<Skill> FindSkillFromGlobalLevel(RE::TESGlobal* a_global);
+
+		static std::shared_ptr<Skill> GetCurrentSkill(RE::ActorValue a_value);
 
 		static void UpdateSkills();
 
@@ -59,21 +76,24 @@ namespace CustomSkills
 
 		static void UpdateVars();
 
-		inline static constexpr auto MENU_AV = RE::ActorValue::kEnchanting;
-		inline static constexpr auto MENU_NAME = RE::StatsMenu::MENU_NAME;
+		static void UpdateTraining();
 
 		inline static REL::Relocation<bool*> IsSingleSkillMode;
-		inline static REL::Relocation<bool*> IsUsingBeastNif;
-		inline static REL::Relocation<bool*> ShouldHideLevel;
+		inline static REL::Relocation<bool*> UseBeastSkillInfo;
+		inline static REL::Relocation<std::uint32_t*> CameraRightPoint;
 
-		inline static RE::BGSSkillPerkTreeNode* _originalSkillTree = nullptr;
-		inline static std::uint32_t _originalSkillTreeWidth = 3;
+		using SkillLocation = std::pair<std::shared_ptr<SkillGroup>, std::size_t>;
+		inline static util::istring_map<std::shared_ptr<SkillGroup>> _groupIds;
+		inline static util::istring_map<SkillLocation> _skillIds;
+		inline static std::map<RE::TESGlobal*, std::shared_ptr<Skill>> _requirementSkills;
 
-		inline static std::vector<std::shared_ptr<Skill>> _skills;
-		inline static std::map<std::string, std::shared_ptr<Skill>, util::iless> _skillIds;
-
-		inline static std::shared_ptr<Skill> _menuSkill = nullptr;
+		inline static std::shared_ptr<SkillGroup> _menuSkills = nullptr;
+		inline static std::vector<CImageController> _cImageControllers;
 		inline static MenuState _menuState = MenuState::None;
 		inline static RE::BSFixedString _colorOfSkillNormal = "#FFFFFF";
+
+		inline static std::shared_ptr<Skill> _trainingSkill = nullptr;
+		inline static std::uint32_t _trainingMax = 0;
+		inline static MenuState _trainingState = MenuState::None;
 	};
 }

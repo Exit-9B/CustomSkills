@@ -1,6 +1,7 @@
 #include "SkillInfo.h"
 
 #include "CustomSkills/CustomSkillsManager.h"
+#include "CustomSkills/Game.h"
 #include "RE/Offset.h"
 
 #include <xbyak/xbyak.h>
@@ -9,94 +10,114 @@ namespace CustomSkills
 {
 	void SkillInfo::WriteHooks()
 	{
-		SkillNamePatch();
-		SkillColorPatch();
-		PerkSkillNamePatch();
+		SkillStatsPatch();
 		SkillDescriptionPatch();
 	}
 
-	void SkillInfo::SkillNamePatch()
+	static void SetSkillStats(RE::StatsMenu* a_menu)
 	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::UpdateSkillList, 0x1EF);
-		REL::make_pattern<"E8">().match_or_fail(hook.address());
+		const auto numSkills = CustomSkillsManager::GetCurrentSkillCount();
+		auto skillStats = std::vector<RE::GFxValue>(5 * numSkills);
 
-		using GetSkillName_t = const char*(std::uint32_t);
-		static REL::Relocation<GetSkillName_t> _GetSkillName;
+		static auto iDifficultyLevelMax = RE::GameSettingCollection::GetSingleton()->GetSetting(
+			"iDifficultyLevelMax");
+		const bool legendaryAvailable = iDifficultyLevelMax && iDifficultyLevelMax->GetSInt() >= 5;
 
-		auto GetSkillName = +[](std::uint32_t a_skill) -> const char*
-		{
-			if (CustomSkillsManager::IsOurMenuMode()) {
-				if (!CustomSkillsManager::_menuSkill->Name.empty()) {
-					return CustomSkillsManager::_menuSkill->Name.c_str();
-				}
-			}
-			return _GetSkillName(a_skill);
-		};
+		for (std::uint32_t i = 0; i < skillStats.size(); i += 5) {
+			RE::GFxValue& level = skillStats[i + 0];
+			RE::GFxValue& name = skillStats[i + 1];
+			RE::GFxValue& percent = skillStats[i + 2];
+			RE::GFxValue& color = skillStats[i + 3];
+			RE::GFxValue& legendary = skillStats[i + 4];
 
-		auto& trampoline = SKSE::GetTrampoline();
-		_GetSkillName = trampoline.write_call<5>(hook.address(), GetSkillName);
-	}
-
-	void SkillInfo::SkillColorPatch()
-	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::UpdateSkillList, 0x2F1);
-		REL::make_pattern<"E8">().match_or_fail(hook.address());
-
-		using GetSkillColor_t = const char*(std::uint32_t);
-		static REL::Relocation<GetSkillColor_t> _GetSkillColor;
-
-		auto GetSkillColor = +[](std::uint32_t a_skill) -> const char*
-		{
-			if (CustomSkillsManager::IsOurMenuMode()) {
-				if (CustomSkillsManager::_menuSkill->UpdateColor()) {
-					return CustomSkillsManager::_menuSkill->ColorStr.c_str();
+			const RE::ActorValue actorValue = a_menu->skillTrees[i / 5];
+			if (const auto skill = CustomSkillsManager::GetCurrentSkill(actorValue)) {
+				if (skill->Level) {
+					level.SetNumber(static_cast<std::uint32_t>(skill->Level->value));
 				}
 				else {
-					return CustomSkillsManager::_colorOfSkillNormal.c_str();
+					level.SetString(""sv);
+				}
+
+				name.SetString(skill->GetName());
+				percent.SetNumber(skill->Ratio ? skill->Ratio->value * 100 : 0.0);
+
+				if (skill->UpdateColor()) {
+					color.SetString(skill->ColorStr);
+				}
+				else {
+					color.SetString(CustomSkillsManager::_colorOfSkillNormal);
+				}
+
+				legendary.SetNumber(
+					legendaryAvailable && skill->Legendary
+						? static_cast<std::uint32_t>(skill->Legendary->value)
+						: 0.0);
+			}
+			else {
+				name.SetString(Game::GetActorValueName(actorValue));
+				color.SetString(Game::GetActorValueColor(actorValue));
+
+				const auto player = RE::PlayerCharacter::GetSingleton();
+				const auto playerSkills = player ? player->skills : nullptr;
+				const std::size_t idx = util::to_underlying(actorValue) - 6;
+				if (playerSkills && idx < 18) {
+					const auto& data = playerSkills->data->skills[idx];
+					level.SetNumber(data.level);
+					percent.SetNumber((data.xp / data.levelThreshold) * 100);
+
+					legendary.SetNumber(
+						legendaryAvailable ? playerSkills->data->legendaryLevels[idx] : 0);
+				}
+				else if (
+					actorValue == RE::ActorValue::kWerewolfPerks ||
+					actorValue == RE::ActorValue::kVampirePerks) {
+					level.SetString(""sv);
+					percent.SetNumber(player->GetActorValue(actorValue));
 				}
 			}
+		}
 
-			return _GetSkillColor(a_skill);
-		};
-
-		auto& trampoline = SKSE::GetTrampoline();
-		_GetSkillColor = trampoline.write_call<5>(hook.address(), GetSkillColor);
+		a_menu->uiMovie->SetVariableArray(
+			RE::GFxMovie::SetArrayType::kValue,
+			"StatsMenu.SkillStatsA",
+			0,
+			skillStats.data(),
+			static_cast<std::uint32_t>(skillStats.size()),
+			RE::GFxMovie::SetVarType::kNormal);
 	}
 
-	void SkillInfo::PerkSkillNamePatch()
+	void SkillInfo::SkillStatsPatch()
 	{
-		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::SetSkillInfo, 0x11A3);
-		REL::make_pattern<"49 8D 4E 20 FF 50 28">().match_or_fail(hook.address());
+		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::UpdateSkillList, 0x9D);
+		REL::make_pattern<"0F 85 A7 03 00 00">().match_or_fail(hook.address() - 0x6);
 
-		static auto GetSkillName = +[](RE::TESFullName* a_name) -> const char*
-		{
-			if (CustomSkillsManager::IsOurMenuMode()) {
-				return CustomSkillsManager::_menuSkill->Name.c_str();
-			}
-
-			return a_name->GetFullName();
-		};
+		auto retn = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::UpdateSkillList, 0x6EB);
 
 		struct Patch : Xbyak::CodeGenerator
 		{
-			Patch(std::uintptr_t a_funcAddr)
+			Patch(std::uintptr_t a_funcAddr, std::uintptr_t a_retnAddr)
 			{
 				Xbyak::Label funcLbl;
+				Xbyak::Label retnLbl;
 
-				lea(rcx, ptr[r14 + 0x20]);
-				jmp(ptr[rip + funcLbl]);
+				mov(rcx, r13);
+				call(ptr[rip + funcLbl]);
+				jmp(ptr[rip + retnLbl]);
+				nop();
 
 				L(funcLbl);
 				dq(a_funcAddr);
+
+				L(retnLbl);
+				dq(a_retnAddr);
 			}
 		};
 
-		auto patch = new Patch(reinterpret_cast<std::uintptr_t>(GetSkillName));
-		patch->ready();
+		Patch patch{ reinterpret_cast<std::uintptr_t>(&SetSkillStats), retn.address() };
+		patch.ready();
 
-		auto& trampoline = SKSE::GetTrampoline();
-		REL::safe_fill(hook.address(), REL::NOP, 0x7);
-		trampoline.write_call<6>(hook.address(), patch->getCode());
+		REL::safe_write(hook.address(), patch.getCode(), patch.getSize());
 	}
 
 	void SkillInfo::SkillDescriptionPatch()
@@ -109,14 +130,15 @@ namespace CustomSkills
 
 		auto GetDescription = +[](RE::BSString& a_description, RE::ActorValue a_actorValue)
 		{
-			if (CustomSkillsManager::IsOurMenuMode()) {
-				a_description = CustomSkillsManager::_menuSkill->Description;
+			if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_actorValue)) {
+				a_description = skill->Description;
 			}
 			else {
 				_GetDescription(a_description, a_actorValue);
 			}
 		};
 
+		// TRAMPOLINE: 14
 		auto& trampoline = SKSE::GetTrampoline();
 		_GetDescription = trampoline.write_call<5>(hook.address(), GetDescription);
 	}

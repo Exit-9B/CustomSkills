@@ -8,14 +8,8 @@ namespace CustomSkills
 		static void WriteHooks();
 
 	private:
-		// Skill name in tree view
-		static void SkillNamePatch();
-
-		// Skill name color
-		static void SkillColorPatch();
-
-		// Skill name in perk description
-		static void PerkSkillNamePatch();
+		// Skill stats in ring
+		static void SkillStatsPatch();
 
 		// Skill description
 		static void SkillDescriptionPatch();

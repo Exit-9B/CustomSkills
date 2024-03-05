@@ -8,13 +8,13 @@ namespace CustomSkills
 		static void WriteHooks();
 
 	private:
-		// Don't allow left right tree switching
-		static void NavigatePatch();
+		// Compute index of current angle
+		static void SelectedTreePatch();
 
-		// Don't remember last selected tree
-		static void CloseMenuPatch();
+		// Prevent tree switching
+		static void LockRotationPatch();
 
-		// No horizontal velocity
-		static void RotatePatch();
+		// Normalize rotation speed
+		static void RotationSpeedPatch();
 	};
 }
