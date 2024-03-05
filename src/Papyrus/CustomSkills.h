@@ -14,6 +14,12 @@ namespace Papyrus
 			std::int32_t aiMaxLevel,
 			RE::Actor* akTrainer);
 
+		void AdvanceSkill(RE::StaticFunctionTag*, std::string asSkillId, float afMagnitude);
+
+		void IncrementSkill(RE::StaticFunctionTag*, std::string asSkillId);
+
+		void IncrementSkillBy(RE::StaticFunctionTag*, std::string asSkillId, std::int32_t aiCount);
+
 		void ShowSkillIncreaseMessage(
 			RE::StaticFunctionTag*,
 			std::string asSkillId,

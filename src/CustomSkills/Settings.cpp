@@ -163,6 +163,17 @@ namespace CustomSkills
 		return RE::ActorValue::kHealth;
 	}
 
+	static RE::TESForm* CreateAdvanceObject(RE::BGSKeyword* a_keyword)
+	{
+		const auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::TESObjectACTI>();
+		const auto obj = factory ? factory->Create() : nullptr;
+		if (obj && a_keyword) {
+			obj->keywords = RE::calloc<RE::BGSKeyword*>(1, sizeof(RE::BGSKeyword*));
+			obj->keywords[0] = a_keyword;
+		}
+		return obj;
+	}
+
 	auto Settings::ReadSkill(const std::filesystem::path& a_file) -> std::shared_ptr<SkillGroup>
 	{
 		const auto dataHandler = RE::TESDataHandler::GetSingleton();
@@ -235,6 +246,10 @@ namespace CustomSkills
 
 				if (const auto& id = skill["id"]; id.isString()) {
 					sk->ID = id.asString();
+					if (const auto advanceKeyword = RE::TESForm::LookupByEditorID<RE::BGSKeyword>(
+							fmt::format("CustomSkillAdvance_{}", sk->ID))) {
+						sk->AdvanceObject = CreateAdvanceObject(advanceKeyword);
+					}
 				}
 
 				if (const auto& name = skill["name"]; name.isString()) {
@@ -267,6 +282,32 @@ namespace CustomSkills
 
 				if (const auto& showLevelup = skill["showLevelup"]; showLevelup.isString()) {
 					sk->ShowLevelup = ParseForm<RE::TESGlobal>(dataHandler, showLevelup);
+				}
+
+				sk->Info->skill = new RE::ActorValueInfo::Skill{
+					.useMult = 1.0f,
+					.useOffset = 0.0f,
+					.improveMult = 1.0f,
+					.improveOffset = 0.0f
+				};
+
+				if (const auto& experienceFormula = skill["experienceFormula"];
+					experienceFormula.isObject()) {
+					if (const auto& useMult = experienceFormula["useMult"]; useMult.isNumeric()) {
+						sk->Info->skill->useMult = useMult.asFloat();
+					}
+					if (const auto& useOffset = experienceFormula["useOffset"];
+						useOffset.isNumeric()) {
+						sk->Info->skill->useOffset = useOffset.asFloat();
+					}
+					if (const auto& improveMult = experienceFormula["improveMult"];
+						improveMult.isNumeric()) {
+						sk->Info->skill->improveMult = improveMult.asFloat();
+					}
+					if (const auto& improveOffset = experienceFormula["improveOffset"];
+						improveOffset.isNumeric()) {
+						sk->Info->skill->improveOffset = improveOffset.asFloat();
+					}
 				}
 
 				std::vector<std::shared_ptr<TreeNode>> tns;
