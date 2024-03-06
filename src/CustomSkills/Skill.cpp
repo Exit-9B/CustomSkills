@@ -64,7 +64,7 @@ namespace CustomSkills
 				xp -= levelThreshold * (1.0f + ratio);
 				ratio = 0.0f;
 				++level;
-				if (IsMainSkill) {
+				if (EnableXPPerRank) {
 					IncreasePlayerCharacterXP(level);
 				}
 			}
@@ -109,7 +109,7 @@ namespace CustomSkills
 			else {
 				for (std::uint32_t i = 0; i < count; ++i) {
 					++level;
-					if (IsMainSkill) {
+					if (EnableXPPerRank) {
 						IncreasePlayerCharacterXP(level);
 					}
 				}

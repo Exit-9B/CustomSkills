@@ -31,7 +31,7 @@ namespace CustomSkills
 		RE::TESForm* AdvanceObject = nullptr;
 		std::string ColorStr;
 		std::int32_t ColorLast = -1;
-		bool IsMainSkill = false;
+		bool EnableXPPerRank = false;
 	};
 
 	class SkillGroup final

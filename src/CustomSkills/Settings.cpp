@@ -36,12 +36,6 @@ namespace CustomSkills
 					if (*lastSelectedTree < group->Skills.size()) {
 						group->LastSelectedTree = *lastSelectedTree;
 					}
-
-					for (const auto& skill : group->Skills) {
-						if (skill) {
-							skill->IsMainSkill = true;
-						}
-					}
 				}
 
 				skills.emplace(std::move(key), std::move(group));
@@ -314,6 +308,10 @@ namespace CustomSkills
 					if (const auto& improveOffset = experienceFormula["improveOffset"];
 						improveOffset.isNumeric()) {
 						sk->Info->skill->improveOffset = improveOffset.asFloat();
+					}
+					if (const auto& enableXPPerRank = experienceFormula["enableXPPerRank"];
+						enableXPPerRank.isBool()) {
+						sk->EnableXPPerRank = enableXPPerRank.asBool();
 					}
 				}
 

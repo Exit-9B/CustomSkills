@@ -141,6 +141,10 @@
                   "improveOffset": {
                     "type": "number",
                     "default": 0.0
+                  },
+                  "enableXPPerRank": {
+                    "type": "boolean",
+                    "default": false
                   }
                 }
               },
