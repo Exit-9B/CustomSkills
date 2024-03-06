@@ -5,6 +5,7 @@
 #include "CustomSkills/Hooks/MenuSetup.h"
 #include "CustomSkills/Hooks/Navigation.h"
 #include "CustomSkills/Hooks/Scaleform.h"
+#include "CustomSkills/Hooks/SkillBooks.h"
 #include "CustomSkills/Hooks/SkillInfo.h"
 #include "CustomSkills/Hooks/SkillProgress.h"
 #include "CustomSkills/Hooks/Training.h"
@@ -61,7 +62,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	logger::info("{} v{}"sv, Plugin::NAME, Plugin::VERSION.string());
 
 	SKSE::Init(a_skse);
-	SKSE::AllocTrampoline(206);
+	SKSE::AllocTrampoline(214);
 
 	using namespace CustomSkills;
 
@@ -76,6 +77,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	Legendary::WriteHooks();
 	BeastSkillInfo::WriteHooks();
 	Training::WriteHooks();
+	SkillBooks::WriteHooks();
 
 	SKSE::GetPapyrusInterface()->Register(Papyrus::CustomSkills::RegisterFuncs);
 
