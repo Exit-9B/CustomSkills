@@ -152,6 +152,7 @@
                 "description": "List of nodes in the tree; the first node is required even if the skill has no perks",
                 "type": "array",
                 "minItems": 1,
+                "maxItems": 128,
                 "prefixItems": [
                   {
                     "description": "This is the hidden root node that should link to the first perk node",
