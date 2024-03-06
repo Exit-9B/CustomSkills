@@ -122,6 +122,32 @@
                   { "$ref": "#/$defs/form" }
                 ]
               },
+              "experienceFormula": {
+                "description": "Parameters for experience calculation when using AdvanceSkill",
+                "type": "object",
+                "properties": {
+                  "useMult" : {
+                    "type": "number",
+                    "default": 1.0
+                  },
+                  "useOffset": {
+                    "type": "number",
+                    "default": 0.0
+                  },
+                  "improveMult": {
+                    "type": "number",
+                    "default": 1.0
+                  },
+                  "improveOffset": {
+                    "type": "number",
+                    "default": 0.0
+                  },
+                  "enableXPPerRank": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                }
+              },
               "nodes": {
                 "description": "List of nodes in the tree; the first node is required even if the skill has no perks",
                 "type": "array",

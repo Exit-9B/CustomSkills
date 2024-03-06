@@ -11,45 +11,14 @@ namespace CustomSkills
 
 		float GetLevel() const { return Level ? Level->value : 0.0f; }
 
-		void Increment(std::uint32_t a_count)
-		{
-			if (a_count == 0)
-				return;
+		void Advance(
+			float a_magnitude,
+			bool a_isSkillUse = true,
+			bool a_hideNotification = false);
 
-			if (Level) {
-				if (Level->value >= 100.0f) {
-					return;
-				}
+		void Increment(std::uint32_t a_count);
 
-				for (; a_count && Level->value < 100.0f; --a_count) {
-					Level->value = static_cast<float>(static_cast<std::int32_t>(Level->value) + 1);
-				}
-
-				Game::ShowSkillIncreasedMessage(
-					GetName(),
-					static_cast<std::int32_t>(Level->value));
-			}
-
-			if (Ratio) {
-				Ratio->value = 0.0f;
-			}
-		}
-
-		bool UpdateColor()
-		{
-			if (!Color) {
-				return false;
-			}
-
-			auto cv = static_cast<std::int32_t>(Color->value) & 0xFFFFFF;
-			if (cv == ColorLast) {
-				return true;
-			}
-
-			ColorLast = cv;
-			ColorStr = fmt::format("#{:06X}", cv);
-			return true;
-		}
+		bool UpdateColor();
 
 		std::string ID;
 		std::string Description;
@@ -59,8 +28,10 @@ namespace CustomSkills
 		RE::TESGlobal* Legendary = nullptr;
 		RE::TESGlobal* Color = nullptr;
 		RE::ActorValueInfo* Info = nullptr;
+		RE::TESForm* AdvanceObject = nullptr;
 		std::string ColorStr;
 		std::int32_t ColorLast = -1;
+		bool EnableXPPerRank = false;
 	};
 
 	class SkillGroup final

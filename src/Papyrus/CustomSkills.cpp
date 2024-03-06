@@ -37,6 +37,24 @@ namespace Papyrus::CustomSkills
 		}
 	}
 
+	void AdvanceSkill(RE::StaticFunctionTag*, std::string asSkillId, float afMagnitude) {
+		if (const auto skill = CustomSkillsManager::FindSkill(asSkillId)) {
+			skill->Advance(afMagnitude);
+		}
+	}
+
+	void IncrementSkill(RE::StaticFunctionTag*, std::string asSkillId) {
+		if (const auto skill = CustomSkillsManager::FindSkill(asSkillId)) {
+			skill->Increment(1);
+		}
+	}
+
+	void IncrementSkillBy(RE::StaticFunctionTag*, std::string asSkillId, std::int32_t aiCount) {
+		if (const auto skill = CustomSkillsManager::FindSkill(asSkillId)) {
+			skill->Increment(aiCount);
+		}
+	}
+
 	void ShowSkillIncreaseMessage(
 		RE::StaticFunctionTag*,
 		std::string asSkillId,
@@ -52,6 +70,9 @@ namespace Papyrus::CustomSkills
 		REGISTER(a_vm, GetAPIVersion);
 		REGISTER(a_vm, OpenCustomSkillMenu);
 		REGISTER(a_vm, ShowTrainingMenu);
+		REGISTER(a_vm, AdvanceSkill);
+		REGISTER(a_vm, IncrementSkill);
+		REGISTER(a_vm, IncrementSkillBy);
 		REGISTER(a_vm, ShowSkillIncreaseMessage);
 
 		return true;

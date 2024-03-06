@@ -12,7 +12,7 @@ namespace CustomSkills
 	private:
 		inline static constexpr std::int32_t MaxNodes = 128;
 
-		static auto ReadSkill(const std::filesystem::path& a_file) -> std::shared_ptr<SkillGroup>;
+		static auto ReadSkills(const std::filesystem::path& a_file) -> std::shared_ptr<SkillGroup>;
 
 		static auto ReadLegacySkill(const std::filesystem::path& a_file)
 			-> std::shared_ptr<SkillGroup>;

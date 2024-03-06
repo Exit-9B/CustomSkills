@@ -67,6 +67,9 @@ namespace CustomSkills
 		std::uint32_t a_maxLevel,
 		RE::Actor* a_trainer)
 	{
+		if (!a_skill->Info || !a_skill->Info->skill)
+			return;
+
 		_trainingSkill = a_skill;
 		_trainingMax = a_maxLevel;
 		SetTrainingState(MenuState::WaitingToOpen);
