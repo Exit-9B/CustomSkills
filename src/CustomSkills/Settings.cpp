@@ -19,7 +19,7 @@ namespace CustomSkills
 				continue;
 			}
 
-			auto filename = entry.path().filename();
+			const auto filename = entry.path().filename();
 
 			if (::_wcsicmp(filename.extension().c_str(), L".json") != 0) {
 				continue;
@@ -53,9 +53,10 @@ namespace CustomSkills
 				continue;
 			}
 
-			auto filename = entry.path().filename();
+			const auto filename = entry.path().filename();
 
-			if (::_wcsnicmp(filename.c_str(), L"CustomSkill.", 12) != 0) {
+			constexpr auto prefix = L"CustomSkill."sv;
+			if (::_wcsnicmp(filename.c_str(), prefix.data(), prefix.size()) != 0) {
 				continue;
 			}
 
@@ -64,7 +65,7 @@ namespace CustomSkills
 				continue;
 			}
 
-			std::string key = filename.stem().stem().string().substr(12);
+			std::string key = filename.stem().stem().string().substr(prefix.size());
 
 			if (key.empty())
 				continue;
