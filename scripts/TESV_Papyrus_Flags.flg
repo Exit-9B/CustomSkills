@@ -21,8 +21,3 @@ Flag Conditional 1
 	Script
 	Variable
 }
-
-Flag Native 0
-{
-	Script
-}
