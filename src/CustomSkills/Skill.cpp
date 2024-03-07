@@ -57,7 +57,7 @@ namespace CustomSkills
 		std::int32_t level = static_cast<std::int32_t>(Level->value);
 		float ratio = Ratio->value;
 
-		while (level < MaxLevel()) {
+		while (level < MaxLevel() && xp > 0.0f) {
 			const float levelThreshold = CalcLevelThreshold(level, improveMult, improveOffset);
 
 			if (ratio + xp / levelThreshold >= 1.0f - std::numeric_limits<float>::epsilon()) {
@@ -70,7 +70,7 @@ namespace CustomSkills
 			}
 			else {
 				ratio += xp / levelThreshold;
-				break;
+				xp = 0.0f;
 			}
 		}
 
