@@ -1,0 +1,58 @@
+/**
+ * @file Interfaces.h
+ *
+ * Copyright (c) Parapets
+ * SPDX-License-Identifier: MIT
+ */
+
+#pragma once
+
+#include "Stubs.h"
+
+namespace CustomSkills
+{
+	class CustomSkillsInterface
+	{
+	public:
+		enum
+		{
+			kVersion = 1,
+		};
+
+		/**
+		 * Get the version of the interface.
+		 */
+		[[nodiscard]] std::uint32_t Version() const;
+
+		/**
+		 * Advance the given skill by the provided amount of skill usage.
+		 *
+		 * @param[in] a_skillId   The ID of the skill to advance.
+		 * @param[in] a_magnitude The amount of XP gained.
+		 */
+		void AdvanceSkill(const char* a_skillId, float a_magnitude);
+
+		/**
+		 * Increment the given skill by the given number of points.
+		 *
+		 * @param[in] a_skillId The ID of the skill to increment.
+		 * @param[in] a_count   The number of points to increment the skill rank.
+		 */
+		void IncrementSkill(const char* a_skillId, std::uint32_t a_count = 1);
+
+	protected:
+		[[nodiscard]] const detail::CustomSkillsInterface* GetProxy() const;
+	};
+
+	/**
+	 * Try to get the CustomSkillsInterface from a message.
+	 *
+	 * @param[in]  a_msg   The message sent by Custom Skills Framework.
+	 * @param[out] a_intfc The variable to store the interface, if present.
+	 */
+	void QueryCustomSkillsInterface(
+		const SKSE::MessagingInterface::Message* a_msg,
+		CustomSkillsInterface*& a_intfc);
+}
+
+#include "Interfaces.inl"
