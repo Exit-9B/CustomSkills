@@ -21,6 +21,7 @@ set(SKSE_SUPPORT_VR OFF)
 
 SKSEPlugin_Add(
 	${PROJECT_NAME}
+	INCLUDE_DIR include
 	SOURCE_DIR src
 	SOURCES
 		.clang-format

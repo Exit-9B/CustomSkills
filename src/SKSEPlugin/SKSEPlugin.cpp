@@ -1,4 +1,5 @@
 #include "CustomSkills/CustomSkillsManager.h"
+#include "CustomSkills/CustomSkillsInterface.h"
 #include "CustomSkills/Hooks/BeastSkillInfo.h"
 #include "CustomSkills/Hooks/Constellation.h"
 #include "CustomSkills/Hooks/Legendary.h"
@@ -90,6 +91,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 				break;
 			case SKSE::MessagingInterface::kDataLoaded:
 				CustomSkillsManager::LoadSkills();
+				CustomSkills::Impl::CustomSkillsInterface::Dispatch();
 				break;
 			}
 		});
