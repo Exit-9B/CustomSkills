@@ -46,19 +46,29 @@ target_link_libraries(
 		jsoncpp_static
 )
 
-if(SkyrimSE_PATH)
-	Papyrus_Add(
-		"PapyrusAPI"
-		GAME ${SkyrimSE_PATH}
-		IMPORTS
-			"${PROJECT_SOURCE_DIR}/scripts"
-		SOURCES
-			"${PROJECT_SOURCE_DIR}/scripts/CustomSkills.psc"
-		OPTIMIZE
-		ANONYMIZE
-		COMPONENT ${CMAKE_INSTALL_DEFAULT_COMPONENT_NAME}
-	)
-endif()
+file(DOWNLOAD
+	https://github.com/ianpatt/skse64/releases/download/v2.2.6/skse64_2_02_06.7z
+	"${CMAKE_CURRENT_BINARY_DIR}/download/skse64_2_02_06.7z"
+)
+
+file(ARCHIVE_EXTRACT
+	INPUT "${CMAKE_CURRENT_BINARY_DIR}/download/skse64_2_02_06.7z"
+	DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/tools"
+)
+
+Papyrus_Add(
+	"PapyrusAPI"
+	#GAME ${SkyrimSE_PATH}
+	MODE SkyrimSE
+	IMPORTS
+		"${PROJECT_SOURCE_DIR}/scripts"
+		"${CMAKE_CURRENT_BINARY_DIR}/tools/skse64_2_02_06/Data/Scripts/Source"
+	SOURCES
+		"${PROJECT_SOURCE_DIR}/scripts/CustomSkills.psc"
+	COMPONENT ${CMAKE_INSTALL_DEFAULT_COMPONENT_NAME}
+	ANONYMIZE
+	SKIP_DEFAULT_IMPORTS
+)
 
 set(CPACK_GENERATOR "7Z")
 set(CPACK_PACKAGE_FILE_NAME ${PROJECT_NAME}-${PROJECT_VERSION})
