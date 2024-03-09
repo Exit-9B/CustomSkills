@@ -66,6 +66,7 @@ namespace CustomSkills
 				call(ptr[rip + funcLbl]);
 				cmp(al, 0);
 				jnz(learnedSkill);
+				movzx(ecx, byte[r15 + 0x110]);
 
 				jmp(ptr[rip]);
 				dq(a_hookAddr + 0x6);
