@@ -11,10 +11,9 @@ namespace CustomSkills
 
 		float GetLevel() const { return Level ? Level->value : 0.0f; }
 
-		void Advance(
-			float a_magnitude,
-			bool a_isSkillUse = true,
-			bool a_hideNotification = false);
+		static constexpr std::int32_t MaxLevel() { return 100; }
+
+		void Advance(float a_magnitude, bool a_isSkillUse = true, bool a_hideNotification = false);
 
 		void Increment(std::uint32_t a_count);
 

@@ -55,12 +55,12 @@ namespace CustomSkills
 		player->advanceObject = nullptr;
 
 		std::int32_t level = static_cast<std::int32_t>(Level->value);
-		float ratio = (std::min)((std::max)(Ratio->value, 0.0f), 1.0f);
+		float ratio = Ratio->value;
 
-		while (level < 100) {
+		while (level < MaxLevel() && xp > 0.0f) {
 			const float levelThreshold = CalcLevelThreshold(level, improveMult, improveOffset);
 
-			if (ratio + xp / levelThreshold >= 1.0f) {
+			if (ratio + xp / levelThreshold >= 1.0f - std::numeric_limits<float>::epsilon()) {
 				xp -= levelThreshold * (1.0f + ratio);
 				ratio = 0.0f;
 				++level;
@@ -70,7 +70,7 @@ namespace CustomSkills
 			}
 			else {
 				ratio += xp / levelThreshold;
-				break;
+				xp = 0.0f;
 			}
 		}
 
@@ -86,36 +86,36 @@ namespace CustomSkills
 
 	void Skill::Increment(std::uint32_t a_count)
 	{
-		if (a_count == 0 || !Info || !Info->skill)
+		if (a_count == 0 || !Level || !Info || !Info->skill)
 			return;
 
 		const float improveMult = Info->skill->improveMult;
 		const float improveOffset = Info->skill->improveOffset;
 
-		if (Level) {
-			std::int32_t level = static_cast<std::int32_t>(Level->value);
-			if (level >= 100) {
-				return;
-			}
+		std::int32_t level = static_cast<std::int32_t>(Level->value);
+		if (level >= MaxLevel()) {
+			return;
+		}
 
-			const std::uint32_t count = (std::min)(a_count, 100U - level);
-			if (Ratio) {
-				for (std::uint32_t i = 0; i < count; ++i) {
-					const float xp = CalcLevelThreshold(level, improveMult, improveOffset) *
-						(1.0f - Ratio->value);
-					Advance(xp, false, i < count - 1);
+		const std::uint32_t count = (std::min)(a_count, std::uint32_t(MaxLevel()) - level);
+		if (Ratio) {
+			for (std::uint32_t i = 0; i < count; ++i) {
+				const float ratio = (std::min)(Ratio->value, 1.0f);
+				const float xp = CalcLevelThreshold(level, improveMult, improveOffset) *
+					(1.0f - ratio);
+				Advance(xp, false, i < count - 1);
+				level = static_cast<std::int32_t>(Level->value);
+			}
+		}
+		else {
+			for (std::uint32_t i = 0; i < count; ++i) {
+				++level;
+				if (EnableXPPerRank) {
+					IncreasePlayerCharacterXP(level);
 				}
 			}
-			else {
-				for (std::uint32_t i = 0; i < count; ++i) {
-					++level;
-					if (EnableXPPerRank) {
-						IncreasePlayerCharacterXP(level);
-					}
-				}
-				Level->value = static_cast<float>(level);
-				Game::ShowSkillIncreasedMessage(GetName(), level);
-			}
+			Level->value = static_cast<float>(level);
+			Game::ShowSkillIncreasedMessage(GetName(), level);
 		}
 	}
 
