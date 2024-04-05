@@ -255,14 +255,18 @@ namespace CustomSkills
 		}
 
 		std::vector<std::shared_ptr<TreeNode>> tns;
+		tns.emplace_back(std::make_shared<TreeNode>())->Index = 0;
 		if (const auto& nodes = skill["nodes"]; nodes.isArray()) {
 			std::map<std::string, std::int32_t> ids;
 
-			const std::int32_t size = (std::min)(128U, nodes.size());
+			const std::size_t size = (std::min)(127U, nodes.size());
+			tns.reserve(size + 1);
 			for (std::int32_t i = 0; i < size; ++i) {
+				tns[0]->Links.push_back(i + 1);
+
 				const auto& node = nodes[i];
 				if (const auto& id = node["id"]; id.isString()) {
-					ids.emplace(id.asString(), i);
+					ids.emplace(id.asString(), i + 1);
 				}
 			}
 
@@ -278,7 +282,7 @@ namespace CustomSkills
 			for (std::int32_t i = 0; i < size; ++i) {
 				const auto& node = nodes[i];
 				const auto& tn = tns.emplace_back(std::make_shared<TreeNode>());
-				tn->Index = i;
+				tn->Index = i + 1;
 				if (const auto& perk = node["perk"]; perk.isString()) {
 					tn->Perk = ParseForm<RE::BGSPerk>(dataHandler, perk);
 				}
@@ -295,10 +299,15 @@ namespace CustomSkills
 				if (const auto& links = node["links"]; links.isArray()) {
 					for (const auto& link : links) {
 						if (link.isInt()) {
-							tn->Links.push_back(link.asInt());
+							// index is 1-based, do not modify
+							const int id = link.asInt();
+							tn->Links.push_back(id);
+							std::erase(tns[0]->Links, id);
 						}
 						else if (link.isString()) {
-							tn->Links.push_back(ids[link.asString()]);
+							const int id = ids[link.asString()];
+							tn->Links.push_back(id);
+							std::erase(tns[0]->Links, id);
 						}
 					}
 				}
@@ -376,8 +385,9 @@ namespace CustomSkills
 				catch (...) {
 					Error(
 						a_file,
-						"Something went wrong when creating skill perk tree! Make sure node 0 "
-						"exists and no missing nodes are referenced in links.");
+						"Something went wrong when creating skill perk tree! Make sure that no "
+						"missing nodes are referenced in links.");
+					return nullptr;
 				}
 			}
 		}
