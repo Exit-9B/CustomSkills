@@ -24,7 +24,7 @@ namespace CustomSkills
 				continue;
 
 			const auto str = std::string_view(keyword->formEditorID);
-			constexpr auto prefix = "CustomSkillBook_"sv;
+			static constexpr auto prefix = "CustomSkillBook_"sv;
 			if (str.size() <= prefix.size() ||
 				::_strnicmp(str.data(), prefix.data(), prefix.size()) != 0) {
 				continue;
