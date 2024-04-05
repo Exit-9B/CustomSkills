@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Custom skill specification",
+  "type": "object",
+  "properties": {
+    "id": {
+      "description": "Unique ID of this skill to reference it with Papyrus functions",
+      "type": "string"
+    },
+    "name": { "$ref": "defs.json#/$defs/localizedString" },
+    "description": { "$ref": "defs.json#/$defs/localizedString" },
+    "level": {
+      "description": "Global variable that contains the current skill level",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "defs.json#/$defs/form" }
+      ]
+    },
+    "ratio": {
+      "description": "Global variable that contains progress to the next level (between 0 and 1)",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "defs.json#/$defs/form" }
+      ]
+    },
+    "legendary": {
+      "description": "Optional global variable that contains the count of how many times the skill has been made legendary",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "defs.json#/$defs/form" }
+      ]
+    },
+    "color": {
+      "description": "Optional global variable that contains the RGB color of the skill (white: 0xFFFFFF; red: 0xFF0000; green: 0x189515)",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "defs.json#/$defs/form" }
+      ]
+    },
+    "showLevelup": {
+      "description": "Optional global variable that is set to 0; it can be set to 1 to display the level up message on the HUD",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "defs.json#/$defs/form" }
+      ]
+    },
+    "experienceFormula": {
+      "description": "Parameters for experience calculation when using AdvanceSkill",
+      "type": "object",
+      "properties": {
+        "useMult" : {
+          "type": "number",
+          "default": 1.0
+        },
+        "useOffset": {
+          "type": "number",
+          "default": 0.0
+        },
+        "improveMult": {
+          "type": "number",
+          "default": 1.0
+        },
+        "improveOffset": {
+          "type": "number",
+          "default": 0.0
+        },
+        "enableXPPerRank": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "nodes": {
+      "description": "List of nodes in the tree; the first node is required even if the skill has no perks",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "prefixItems": [
+        {
+          "description": "This is the hidden root node that should link to the first perk node",
+          "type": "object",
+          "properties": {
+            "links": {
+              "description": "IDs or indices of linked perk nodes",
+              "type": "array",
+              "items": { "types": [ "integer", "string" ] }
+            }
+          }
+        }
+      ],
+      "items": {
+        "description": "Perk node specification",
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Optional ID for referencing this node in links",
+            "type": "string"
+          },
+          "perk": {
+            "description": "The perk for this node",
+            "$ref": "defs.json#/$defs/form"
+          },
+          "x": {
+            "description": "Horizontal position of the node (positive direction is left)",
+            "type": "number"
+          },
+          "y": {
+            "description": "Vertical position of the node (positive direction is up)",
+            "type": "number"
+          },
+          "links": {
+            "description": "IDs or indices of linked perk nodes",
+            "type": "array",
+            "items": {
+              "types": [ "integer", "string" ]
+            }
+          }
+        },
+        "requiredProperties": [ "perk", "x", "y" ]
+      }
+    }
+  },
+  "requiredProperties": [ "nodes" ]
+}

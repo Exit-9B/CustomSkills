@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Custom Skills Framework",
+  "description": "Defines custom skills",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "skydome": {
+      "description": "Specification of skydome (background) model for this skill menu",
+      "type": "object",
+      "properties": {
+        "model": {
+          "description": "Path to the skydome nif (relative to Data/Meshes)",
+          "type": "string",
+          "default": "DLC01/Interface/INTVampirePerkSkydome.nif"
+        },
+        "cameraRightPoint": {
+          "description": "Point index used for computing the camera up vector; 1 for vanilla skydome and 2 for beast skydome",
+          "type": "integer",
+          "minimum": 1,
+          "default": 2
+        }
+      }
+    },
+    "showMenu": {
+      "description": "Optional global variable that is set to 0; it can be set to 1 to show the menu",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "defs.json#/$defs/form" }
+      ]
+    },
+    "debugReload": {
+      "description": "Optional global variable that is set to 0; it can be set to 1 to reload configs",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "defs.json#/$defs/form" }
+      ]
+    },
+    "perkPoints": {
+      "description": "Optional global variable that contains custom perk points for these skills; if not set, then the player's regular perk points will be used",
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "defs.json#/$defs/form" }
+      ]
+    },
+    "skills": {
+      "description": "Array containing the skills to show in the menu",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "anyOf": [
+          {
+            "description": "Standard skill to be shown in the custom menu",
+            "enum": [
+              "Alchemy",
+              "Alteration",
+              "Block",
+              "Conjuration",
+              "Destruction",
+              "Enchanting",
+              "HeavyArmor",
+              "Illusion",
+              "LightArmor",
+              "Lockpicking",
+              "Marksman",
+              "OneHanded",
+              "Pickpocket",
+              "Restoration",
+              "Smithing",
+              "Sneak",
+              "Speechcraft",
+              "TwoHanded",
+              "VampirePerks",
+              "WerewolfPerks"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "$ref": {
+                "type": "string",
+                "format": "uri-reference"
+              }
+            }
+          },
+          {
+            "$ref": "skill.json"
+          }
+        ]
+      }
+    }
+  },
+  "requiredProperties": [ "skills" ]
+}

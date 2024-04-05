@@ -82,30 +82,6 @@ namespace CustomSkills
 		return skills;
 	}
 
-	static RE::BSResourceNiBinaryStream& operator>>(
-		RE::BSResourceNiBinaryStream& a_sin,
-		auto& a_root)
-	{
-		Json::CharReaderBuilder fact;
-		std::unique_ptr<Json::CharReader> const reader{ fact.newCharReader() };
-
-		const auto size = a_sin.stream->totalSize;
-		const auto buffer = std::make_unique<char[]>(size);
-		a_sin.read(buffer.get(), size);
-
-		const auto begin = buffer.get();
-		const auto end = begin + size;
-
-		std::string errs;
-		const bool ok = reader->parse(begin, end, &a_root, &errs);
-
-		if (!ok) {
-			throw std::runtime_error(errs);
-		}
-
-		return a_sin;
-	}
-
 	template <typename T>
 	static T* ParseForm(RE::TESDataHandler* dataHandler, const Json::Value& a_val)
 	{
@@ -176,8 +152,28 @@ namespace CustomSkills
 		return obj;
 	}
 
-	auto Settings::ReadSkills(const std::filesystem::path& a_file) -> std::shared_ptr<SkillGroup>
+	static auto ReadSkillDef(const Json::Value& skill) -> std::shared_ptr<Skill>
 	{
+		if (const auto uri = skill["$ref"].asString(); !uri.empty()) {
+			Json::Value external;
+			const auto path = uri.front() == '/'
+				? std::filesystem::path("Data"sv) / uri
+				: std::filesystem::path("Data/SKSE/Plugins/CustomSkills/"sv) / uri;
+
+			if (auto stream = std::ifstream(path.string()); stream.good()) {
+				try {
+					stream >> external;
+				}
+				catch (...) {
+					logger::error("Parse errors in file: {}", path.string());
+				}
+			}
+
+			if (external.isObject()) {
+				return ReadSkillDef(external);
+			}
+		}
+
 		const auto dataHandler = RE::TESDataHandler::GetSingleton();
 		if (!dataHandler)
 			return nullptr;
@@ -186,17 +182,147 @@ namespace CustomSkills
 		if (!factory)
 			return nullptr;
 
-		RE::BSResourceNiBinaryStream fileStream{ a_file.string() };
+		const auto sk = std::make_shared<Skill>();
+		sk->Info = factory->Create();
 
-		if (!fileStream.good())
+		if (const auto& id = skill["id"]; id.isString()) {
+			sk->ID = id.asString();
+			if (const auto advanceKeyword = RE::TESForm::LookupByEditorID<RE::BGSKeyword>(
+					fmt::format("CustomSkillAdvance_{}", sk->ID))) {
+				sk->AdvanceObject = CreateAdvanceObject(advanceKeyword);
+			}
+		}
+
+		if (const auto& name = skill["name"]; name.isString()) {
+			std::string tr = name.asString();
+			SKSE::Translation::Translate(tr, tr);
+			sk->Info->fullName = tr;
+		}
+
+		if (const auto& description = skill["description"]; description.isString()) {
+			std::string tr = description.asString();
+			SKSE::Translation::Translate(tr, tr);
+			sk->Description = std::move(tr);
+		}
+
+		if (const auto& level = skill["level"]; level.isString()) {
+			sk->Level = ParseForm<RE::TESGlobal>(dataHandler, level);
+		}
+
+		if (const auto& ratio = skill["ratio"]; ratio.isString()) {
+			sk->Ratio = ParseForm<RE::TESGlobal>(dataHandler, ratio);
+		}
+
+		if (const auto& legendary = skill["legendary"]; legendary.isString()) {
+			sk->Legendary = ParseForm<RE::TESGlobal>(dataHandler, legendary);
+		}
+
+		if (const auto& color = skill["color"]; color.isString()) {
+			sk->Color = ParseForm<RE::TESGlobal>(dataHandler, color);
+		}
+
+		if (const auto& showLevelup = skill["showLevelup"]; showLevelup.isString()) {
+			sk->ShowLevelup = ParseForm<RE::TESGlobal>(dataHandler, showLevelup);
+		}
+
+		sk->Info->skill = new RE::ActorValueInfo::Skill{
+			.useMult = 1.0f,
+			.useOffset = 0.0f,
+			.improveMult = 1.0f,
+			.improveOffset = 0.0f
+		};
+
+		if (const auto& experienceFormula = skill["experienceFormula"];
+			experienceFormula.isObject()) {
+			if (const auto& useMult = experienceFormula["useMult"]; useMult.isNumeric()) {
+				sk->Info->skill->useMult = useMult.asFloat();
+			}
+			if (const auto& useOffset = experienceFormula["useOffset"]; useOffset.isNumeric()) {
+				sk->Info->skill->useOffset = useOffset.asFloat();
+			}
+			if (const auto& improveMult = experienceFormula["improveMult"];
+				improveMult.isNumeric()) {
+				sk->Info->skill->improveMult = improveMult.asFloat();
+			}
+			if (const auto& improveOffset = experienceFormula["improveOffset"];
+				improveOffset.isNumeric()) {
+				sk->Info->skill->improveOffset = improveOffset.asFloat();
+			}
+			if (const auto& enableXPPerRank = experienceFormula["enableXPPerRank"];
+				enableXPPerRank.isBool()) {
+				sk->EnableXPPerRank = enableXPPerRank.asBool();
+			}
+		}
+
+		std::vector<std::shared_ptr<TreeNode>> tns;
+		if (const auto& nodes = skill["nodes"]; nodes.isArray()) {
+			std::map<std::string, std::int32_t> ids;
+
+			const std::int32_t size = (std::min)(128U, nodes.size());
+			for (std::int32_t i = 0; i < size; ++i) {
+				const auto& node = nodes[i];
+				if (const auto& id = node["id"]; id.isString()) {
+					ids.emplace(id.asString(), i);
+				}
+			}
+
+			std::int32_t gridWidth = 1;
+			for (const auto& node : nodes) {
+				const auto x = node["x"].asDouble();
+				gridWidth = (std::max)(gridWidth, static_cast<std::int32_t>(std::ceil(x * 2)));
+			}
+
+			sk->Info->perkTreeWidth = gridWidth;
+			const std::uint32_t xMax = (gridWidth + 1) / 2;
+
+			for (std::int32_t i = 0; i < size; ++i) {
+				const auto& node = nodes[i];
+				const auto& tn = tns.emplace_back(std::make_shared<TreeNode>());
+				tn->Index = i;
+				if (const auto& perk = node["perk"]; perk.isString()) {
+					tn->Perk = ParseForm<RE::BGSPerk>(dataHandler, perk);
+				}
+
+				const auto x = node["x"].asDouble() + gridWidth * 0.5;
+				const auto y = node["y"].asDouble();
+				tn->GridX = (std::max)(static_cast<std::int32_t>(x + 0.58), 0);
+				tn->X = static_cast<float>(x - tn->GridX);
+				tn->GridY = (std::min)(
+					(std::max)(static_cast<std::int32_t>(y - 0.12 * (xMax + 1)), 0),
+					4);
+				tn->Y = static_cast<float>(y - tn->GridY);
+
+				if (const auto& links = node["links"]; links.isArray()) {
+					for (const auto& link : links) {
+						if (link.isInt()) {
+							tn->Links.push_back(link.asInt());
+						}
+						else if (link.isString()) {
+							tn->Links.push_back(ids[link.asString()]);
+						}
+					}
+				}
+			}
+		}
+
+		sk->Info->perkTree = TreeNode::Create(tns, sk->Info);
+		return sk;
+	}
+
+	auto Settings::ReadSkills(const std::filesystem::path& a_file) -> std::shared_ptr<SkillGroup>
+	{
+		const auto dataHandler = RE::TESDataHandler::GetSingleton();
+		if (!dataHandler)
 			return nullptr;
 
 		Json::Value root;
-		try {
-			fileStream >> root;
-		}
-		catch (...) {
-			logger::error("Parse errors in file: {}", a_file.filename().string());
+		if (auto fileStream = std::ifstream(a_file.string()); fileStream.good()) {
+			try {
+				fileStream >> root;
+			}
+			catch (...) {
+				logger::error("Parse errors in file: {}", a_file.string());
+			}
 		}
 
 		if (!root.isObject())
@@ -241,136 +367,11 @@ namespace CustomSkills
 					continue;
 				}
 
-				const auto& sk = group->Skills.emplace_back(std::make_shared<Skill>());
-				sk->Info = factory->Create();
-
-				group->ActorValues.push_back(static_cast<RE::ActorValue>(actorValue++));
-
-				if (const auto& id = skill["id"]; id.isString()) {
-					sk->ID = id.asString();
-					if (const auto advanceKeyword = RE::TESForm::LookupByEditorID<RE::BGSKeyword>(
-							fmt::format("CustomSkillAdvance_{}", sk->ID))) {
-						sk->AdvanceObject = CreateAdvanceObject(advanceKeyword);
-					}
-				}
-
-				if (const auto& name = skill["name"]; name.isString()) {
-					std::string tr = name.asString();
-					SKSE::Translation::Translate(tr, tr);
-					sk->Info->fullName = tr;
-				}
-
-				if (const auto& description = skill["description"]; description.isString()) {
-					std::string tr = description.asString();
-					SKSE::Translation::Translate(tr, tr);
-					sk->Description = std::move(tr);
-				}
-
-				if (const auto& level = skill["level"]; level.isString()) {
-					sk->Level = ParseForm<RE::TESGlobal>(dataHandler, level);
-				}
-
-				if (const auto& ratio = skill["ratio"]; ratio.isString()) {
-					sk->Ratio = ParseForm<RE::TESGlobal>(dataHandler, ratio);
-				}
-
-				if (const auto& legendary = skill["legendary"]; legendary.isString()) {
-					sk->Legendary = ParseForm<RE::TESGlobal>(dataHandler, legendary);
-				}
-
-				if (const auto& color = skill["color"]; color.isString()) {
-					sk->Color = ParseForm<RE::TESGlobal>(dataHandler, color);
-				}
-
-				if (const auto& showLevelup = skill["showLevelup"]; showLevelup.isString()) {
-					sk->ShowLevelup = ParseForm<RE::TESGlobal>(dataHandler, showLevelup);
-				}
-
-				sk->Info->skill = new RE::ActorValueInfo::Skill{
-					.useMult = 1.0f,
-					.useOffset = 0.0f,
-					.improveMult = 1.0f,
-					.improveOffset = 0.0f
-				};
-
-				if (const auto& experienceFormula = skill["experienceFormula"];
-					experienceFormula.isObject()) {
-					if (const auto& useMult = experienceFormula["useMult"]; useMult.isNumeric()) {
-						sk->Info->skill->useMult = useMult.asFloat();
-					}
-					if (const auto& useOffset = experienceFormula["useOffset"];
-						useOffset.isNumeric()) {
-						sk->Info->skill->useOffset = useOffset.asFloat();
-					}
-					if (const auto& improveMult = experienceFormula["improveMult"];
-						improveMult.isNumeric()) {
-						sk->Info->skill->improveMult = improveMult.asFloat();
-					}
-					if (const auto& improveOffset = experienceFormula["improveOffset"];
-						improveOffset.isNumeric()) {
-						sk->Info->skill->improveOffset = improveOffset.asFloat();
-					}
-					if (const auto& enableXPPerRank = experienceFormula["enableXPPerRank"];
-						enableXPPerRank.isBool()) {
-						sk->EnableXPPerRank = enableXPPerRank.asBool();
-					}
-				}
-
-				std::vector<std::shared_ptr<TreeNode>> tns;
-				if (const auto& nodes = skill["nodes"]; nodes.isArray()) {
-					std::map<std::string, std::int32_t> ids;
-
-					const std::int32_t size = (std::min)(128U, nodes.size());
-					for (std::int32_t i = 0; i < size; ++i) {
-						const auto& node = nodes[i];
-						if (const auto& id = node["id"]; id.isString()) {
-							ids.emplace(id.asString(), i);
-						}
-					}
-
-					std::int32_t gridWidth = 1;
-					for (const auto& node : nodes) {
-						const auto x = node["x"].asDouble();
-						gridWidth = (std::max)(
-							gridWidth,
-							static_cast<std::int32_t>(std::ceil(x * 2)));
-					}
-
-					sk->Info->perkTreeWidth = gridWidth;
-					const std::uint32_t xMax = (gridWidth + 1) / 2;
-
-					for (std::int32_t i = 0; i < size; ++i) {
-						const auto& node = nodes[i];
-						const auto& tn = tns.emplace_back(std::make_shared<TreeNode>());
-						tn->Index = i;
-						if (const auto& perk = node["perk"]; perk.isString()) {
-							tn->Perk = ParseForm<RE::BGSPerk>(dataHandler, perk);
-						}
-
-						const auto x = node["x"].asDouble() + gridWidth * 0.5;
-						const auto y = node["y"].asDouble();
-						tn->GridX = (std::max)(static_cast<std::int32_t>(x + 0.58), 0);
-						tn->X = static_cast<float>(x - tn->GridX);
-						tn->GridY = (std::min)(
-							(std::max)(static_cast<std::int32_t>(y - 0.12 * (xMax + 1)), 0),
-							4);
-						tn->Y = static_cast<float>(y - tn->GridY);
-
-						if (const auto& links = node["links"]; links.isArray()) {
-							for (const auto& link : links) {
-								if (link.isInt()) {
-									tn->Links.push_back(link.asInt());
-								}
-								else if (link.isString()) {
-									tn->Links.push_back(ids[link.asString()]);
-								}
-							}
-						}
-					}
-				}
-
 				try {
-					sk->Info->perkTree = TreeNode::Create(tns, sk->Info);
+					if (auto&& sk = ReadSkillDef(skill)) {
+						group->Skills.push_back(std::move(sk));
+						group->ActorValues.push_back(static_cast<RE::ActorValue>(actorValue++));
+					}
 				}
 				catch (...) {
 					Error(
