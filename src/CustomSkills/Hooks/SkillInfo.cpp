@@ -40,7 +40,7 @@ namespace CustomSkills
 				}
 
 				name.SetString(skill->GetName());
-				percent.SetNumber(skill->Ratio ? skill->Ratio->value * 100 : 0.0);
+				percent.SetNumber(skill->GetProgressPercent());
 
 				if (skill->UpdateColor()) {
 					color.SetString(skill->ColorStr);

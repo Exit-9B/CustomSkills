@@ -19,6 +19,15 @@ namespace RE
 			inline constexpr auto ListAlloc = REL::ID(68163);
 		}
 
+		namespace CraftingSubMenus
+		{
+			namespace ConstructibleObjectMenu
+			{
+				inline constexpr auto CreationConfirmed = REL::ID(51369);
+				inline constexpr auto UpdateBottomBar = REL::ID(51458);
+			}
+		}
+
 		namespace LegendarySkillResetConfirmCallback
 		{
 			inline constexpr auto Run = REL::ID(52591);
