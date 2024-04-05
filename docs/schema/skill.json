@@ -3,6 +3,10 @@
   "description": "Custom skill specification",
   "type": "object",
   "properties": {
+    "$ref": {
+      "type": "string",
+      "format": "uri-reference"
+    },
     "id": {
       "description": "Unique ID of this skill to reference it with Papyrus functions",
       "type": "string"

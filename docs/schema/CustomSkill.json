@@ -78,15 +78,6 @@
             ]
           },
           {
-            "type": "object",
-            "properties": {
-              "$ref": {
-                "type": "string",
-                "format": "uri-reference"
-              }
-            }
-          },
-          {
             "$ref": "skill.json"
           }
         ]
