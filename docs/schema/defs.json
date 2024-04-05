@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "localizedString": {
+      "type": "string",
+      "oneOf": [
+        {
+          "pattern": "^[^\\$]",
+          "description": "WARNING: String will not be localized",
+          "deprecated": true
+        },
+        {
+          "pattern": "^\\$",
+          "description": "Localized string"
+        }
+      ]
+    },
+    "form": {
+      "description": "Look up a Form by a plugin file and Form ID (e.g. \"MyMod.esp|D62\")",
+      "type": "string",
+      "pattern": "^[^\\\\\\/:*?\"<>|]+\\.es[lmp]\\|(0[Xx])?[\\dA-Fa-f]{3,8}$"
+    }
+  }
+}
