@@ -8,9 +8,15 @@
 #pragma once
 
 #include "Interfaces.h"
+#include "SKSE/Logger.h"
+
+#include <cstring>
+#include <string_view>
 
 namespace CustomSkills
 {
+	using namespace std::literals::string_view_literals;
+
 	inline std::uint32_t CustomSkillsInterface::Version() const
 	{
 		return GetProxy()->interfaceVersion;
@@ -31,11 +37,18 @@ namespace CustomSkills
 		return reinterpret_cast<const detail::CustomSkillsInterface*>(this);
 	}
 
+	template <class T>
+	inline RE::BSTEventSource<T>* CustomSkillsInterface::GetEventDispatcher()
+	{
+		return static_cast<RE::BSTEventSource<T>*>(
+			GetProxy()->GetEventDispatcher(static_cast<std::uint32_t>(T::ID)));
+	}
+
 	inline void QueryCustomSkillsInterface(
 		const SKSE::MessagingInterface::Message* a_msg,
 		CustomSkillsInterface*& a_intfc)
 	{
-		if (!a_msg || ::strcmp(a_msg->sender, "CustomSkills") != 0 ||
+		if (!a_msg || std::strcmp(a_msg->sender, "CustomSkills") != 0 ||
 			a_msg->type != kCustomSkillsInterface) {
 			return;
 		}

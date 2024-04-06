@@ -1,6 +1,7 @@
 #include "CustomSkillsInterface.h"
 
 #include "CustomSkillsManager.h"
+#include "SkillIncreaseEventSource.h"
 
 namespace CustomSkills::Impl
 {
@@ -19,6 +20,7 @@ namespace CustomSkills::Impl
 			.interfaceVersion = InterfaceVersion,
 			.AdvanceSkill = &AdvanceSkill,
 			.IncrementSkill = &IncrementSkill,
+			.GetEventDispatcher = &GetEventDispatcher,
 		};
 		return std::addressof(intfc);
 	}
@@ -35,5 +37,14 @@ namespace CustomSkills::Impl
 		if (const auto skill = CustomSkillsManager::FindSkill(a_skillId)) {
 			skill->Increment(a_count);
 		}
+	}
+
+	void* CustomSkillsInterface::GetEventDispatcher(std::uint32_t a_dispatcherID)
+	{
+		switch (static_cast<Dispatcher>(a_dispatcherID)) {
+		case Dispatcher::kSkillIncreaseEvent:
+			return SkillIncreaseEventSource::Instance();
+		}
+		return nullptr;
 	}
 }

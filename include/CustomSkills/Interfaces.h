@@ -7,7 +7,16 @@
 
 #pragma once
 
+#include "Events.h"
 #include "Stubs.h"
+
+#include "SKSE/Interfaces.h"
+
+namespace RE
+{
+	template <class Event>
+	class BSTEventSource;
+}
 
 namespace CustomSkills
 {
@@ -39,6 +48,14 @@ namespace CustomSkills
 		 * @param[in] a_count   The number of points to increment the skill rank.
 		 */
 		void IncrementSkill(const char* a_skillId, std::uint32_t a_count = 1);
+
+		/**
+		 * Get an event dispatcher.
+		 *
+		 * @tparam T The event type.
+		 */
+		template <class T>
+		[[nodiscard]] RE::BSTEventSource<T>* GetEventDispatcher();
 
 	protected:
 		[[nodiscard]] const detail::CustomSkillsInterface* GetProxy() const;
