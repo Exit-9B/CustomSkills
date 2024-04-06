@@ -13,7 +13,7 @@ namespace CustomSkills
 			0x1DD);
 
 		if (!REL::make_pattern<"FF 15">().match(hook.address())) {
-			util::report_and_fail("Failed to install Scaleform hook");
+			util::report_and_fail("Failed to install Scaleform hook"sv);
 		}
 
 		using SetViewScaleMode_t = void(RE::GFxMovieView*, RE::GFxMovieView::ScaleModeType);
@@ -67,7 +67,7 @@ namespace CustomSkills
 
 		for (std::int32_t i = 0; i < numSkills; ++i) {
 			RE::GFxValue SkillText;
-			a_params.thisPtr->GetMember(fmt::format("SkillText{}", i).data(), &SkillText);
+			a_params.thisPtr->GetMember(fmt::format("SkillText{}"sv, i).data(), &SkillText);
 			if (!SkillText.IsDisplayObject())
 				continue;
 
