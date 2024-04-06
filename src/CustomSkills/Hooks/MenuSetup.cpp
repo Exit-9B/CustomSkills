@@ -220,7 +220,7 @@ namespace CustomSkills
 			}
 			else if (CustomSkillsManager::IsOurMenuMode()) {
 				CustomSkillsManager::_menuSkills->LastSelectedTree = a_statsMenu->selectedTree;
-				if (CustomSkillsManager::FindSkillMenu("SKILLS"s) ==
+				if (CustomSkillsManager::FindSkillMenu("SKILLS"sv) ==
 					CustomSkillsManager::_menuSkills) {
 					*lastSelectedTree = a_statsMenu->selectedTree;
 				}

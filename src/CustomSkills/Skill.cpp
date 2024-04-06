@@ -131,7 +131,7 @@ namespace CustomSkills
 		}
 
 		ColorLast = cv;
-		ColorStr = fmt::format("#{:06X}", cv);
+		ColorStr = fmt::format("#{:06X}"sv, cv);
 		return true;
 	}
 }

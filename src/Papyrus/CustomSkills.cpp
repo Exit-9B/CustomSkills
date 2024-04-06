@@ -65,6 +65,11 @@ namespace Papyrus::CustomSkills
 		}
 	}
 
+	void DebugReload(RE::StaticFunctionTag*)
+	{
+		CustomSkillsManager::LoadSkills();
+	}
+
 	bool RegisterFuncs(RE::BSScript::IVirtualMachine* a_vm)
 	{
 		REGISTER(a_vm, GetAPIVersion);
@@ -74,6 +79,7 @@ namespace Papyrus::CustomSkills
 		REGISTER(a_vm, IncrementSkill);
 		REGISTER(a_vm, IncrementSkillBy);
 		REGISTER(a_vm, ShowSkillIncreaseMessage);
+		REGISTER(a_vm, DebugReload);
 
 		return true;
 	}

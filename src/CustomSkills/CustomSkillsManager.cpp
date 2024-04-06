@@ -220,7 +220,7 @@ namespace CustomSkills
 		return playerCharacter->GetBaseActorValue(a_skill);
 	}
 
-	std::shared_ptr<SkillGroup> CustomSkillsManager::FindSkillMenu(const std::string& a_key)
+	std::shared_ptr<SkillGroup> CustomSkillsManager::FindSkillMenu(std::string_view a_key)
 	{
 		if (const auto i = _groupIds.find(a_key); i != _groupIds.end()) {
 			return i->second;
@@ -229,7 +229,7 @@ namespace CustomSkills
 		return nullptr;
 	}
 
-	std::shared_ptr<Skill> CustomSkillsManager::FindSkill(const std::string& a_key)
+	std::shared_ptr<Skill> CustomSkillsManager::FindSkill(std::string_view a_key)
 	{
 		if (const auto i = _skillIds.find(a_key); i != _skillIds.end()) {
 			const auto& [group, index] = i->second;
@@ -239,7 +239,7 @@ namespace CustomSkills
 		return nullptr;
 	}
 
-	auto CustomSkillsManager::FindSkillOrigin(const std::string& a_key)
+	auto CustomSkillsManager::FindSkillOrigin(std::string_view a_key)
 		-> std::pair<std::shared_ptr<SkillGroup>, std::size_t>
 	{
 		if (const auto i = _skillIds.find(a_key); i != _skillIds.end()) {

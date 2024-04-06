@@ -30,8 +30,7 @@ namespace CustomSkills
 				continue;
 			}
 
-			const auto skill = CustomSkillsManager::FindSkill(
-				std::string(str.substr(prefix.size())));
+			const auto skill = CustomSkillsManager::FindSkill(str.substr(prefix.size()));
 			if (!skill)
 				continue;
 
