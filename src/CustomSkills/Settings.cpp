@@ -12,7 +12,7 @@ namespace CustomSkills
 	{
 		util::istring_map<std::shared_ptr<SkillGroup>> skills;
 
-		auto dir = std::filesystem::path("Data/SKSE/Plugins/CustomSkills");
+		auto dir = std::filesystem::path("Data/SKSE/Plugins/CustomSkills"sv);
 		std::error_code ec;
 		for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
 			if (!entry.is_regular_file()) {
@@ -43,10 +43,10 @@ namespace CustomSkills
 		}
 
 		if (ec) {
-			logger::error("Error reading skill configs: {}", ec.message());
+			logger::error("Error reading skill configs: {}"sv, ec.message());
 		}
 
-		dir = std::filesystem::path("Data/NetScriptFramework/Plugins");
+		dir = std::filesystem::path("Data/NetScriptFramework/Plugins"sv);
 		ec = {};
 		for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
 			if (!entry.is_regular_file()) {
@@ -76,7 +76,7 @@ namespace CustomSkills
 		}
 
 		if (ec) {
-			logger::error("Error reading legacy skill configs: {}", ec.message());
+			logger::error("Error reading legacy skill configs: {}"sv, ec.message());
 		}
 
 		return skills;
@@ -154,7 +154,7 @@ namespace CustomSkills
 
 	static auto ReadSkillDef(const Json::Value& skill) -> std::shared_ptr<Skill>
 	{
-		if (const auto uri = skill["$ref"].asString(); !uri.empty()) {
+		if (const auto uri = skill["$ref"s].asString(); !uri.empty()) {
 			Json::Value external;
 			const auto path = uri.front() == '/'
 				? std::filesystem::path("Data"sv) / uri
@@ -165,7 +165,7 @@ namespace CustomSkills
 					stream >> external;
 				}
 				catch (...) {
-					logger::error("Parse errors in file: {}", path.string());
+					logger::error("Parse errors in file: {}"sv, path.string());
 				}
 			}
 
@@ -185,43 +185,43 @@ namespace CustomSkills
 		const auto sk = std::make_shared<Skill>();
 		sk->Info = factory->Create();
 
-		if (const auto& id = skill["id"]; id.isString()) {
+		if (const auto& id = skill["id"s]; id.isString()) {
 			sk->ID = id.asString();
 			if (const auto advanceKeyword = RE::TESForm::LookupByEditorID<RE::BGSKeyword>(
-					fmt::format("CustomSkillAdvance_{}", sk->ID))) {
+					fmt::format("CustomSkillAdvance_{}"sv, sk->ID))) {
 				sk->AdvanceObject = CreateAdvanceObject(advanceKeyword);
 			}
 		}
 
-		if (const auto& name = skill["name"]; name.isString()) {
+		if (const auto& name = skill["name"s]; name.isString()) {
 			std::string tr = name.asString();
 			SKSE::Translation::Translate(tr, tr);
 			sk->Info->fullName = tr;
 		}
 
-		if (const auto& description = skill["description"]; description.isString()) {
+		if (const auto& description = skill["description"s]; description.isString()) {
 			std::string tr = description.asString();
 			SKSE::Translation::Translate(tr, tr);
 			sk->Description = std::move(tr);
 		}
 
-		if (const auto& level = skill["level"]; level.isString()) {
+		if (const auto& level = skill["level"s]; level.isString()) {
 			sk->Level = ParseForm<RE::TESGlobal>(dataHandler, level);
 		}
 
-		if (const auto& ratio = skill["ratio"]; ratio.isString()) {
+		if (const auto& ratio = skill["ratio"s]; ratio.isString()) {
 			sk->Ratio = ParseForm<RE::TESGlobal>(dataHandler, ratio);
 		}
 
-		if (const auto& legendary = skill["legendary"]; legendary.isString()) {
+		if (const auto& legendary = skill["legendary"s]; legendary.isString()) {
 			sk->Legendary = ParseForm<RE::TESGlobal>(dataHandler, legendary);
 		}
 
-		if (const auto& color = skill["color"]; color.isString()) {
+		if (const auto& color = skill["color"s]; color.isString()) {
 			sk->Color = ParseForm<RE::TESGlobal>(dataHandler, color);
 		}
 
-		if (const auto& showLevelup = skill["showLevelup"]; showLevelup.isString()) {
+		if (const auto& showLevelup = skill["showLevelup"s]; showLevelup.isString()) {
 			sk->ShowLevelup = ParseForm<RE::TESGlobal>(dataHandler, showLevelup);
 		}
 
@@ -232,23 +232,23 @@ namespace CustomSkills
 			.improveOffset = 0.0f
 		};
 
-		if (const auto& experienceFormula = skill["experienceFormula"];
+		if (const auto& experienceFormula = skill["experienceFormula"s];
 			experienceFormula.isObject()) {
-			if (const auto& useMult = experienceFormula["useMult"]; useMult.isNumeric()) {
+			if (const auto& useMult = experienceFormula["useMult"s]; useMult.isNumeric()) {
 				sk->Info->skill->useMult = useMult.asFloat();
 			}
-			if (const auto& useOffset = experienceFormula["useOffset"]; useOffset.isNumeric()) {
+			if (const auto& useOffset = experienceFormula["useOffset"s]; useOffset.isNumeric()) {
 				sk->Info->skill->useOffset = useOffset.asFloat();
 			}
-			if (const auto& improveMult = experienceFormula["improveMult"];
+			if (const auto& improveMult = experienceFormula["improveMult"s];
 				improveMult.isNumeric()) {
 				sk->Info->skill->improveMult = improveMult.asFloat();
 			}
-			if (const auto& improveOffset = experienceFormula["improveOffset"];
+			if (const auto& improveOffset = experienceFormula["improveOffset"s];
 				improveOffset.isNumeric()) {
 				sk->Info->skill->improveOffset = improveOffset.asFloat();
 			}
-			if (const auto& enableXPPerRank = experienceFormula["enableXPPerRank"];
+			if (const auto& enableXPPerRank = experienceFormula["enableXPPerRank"s];
 				enableXPPerRank.isBool()) {
 				sk->EnableXPPerRank = enableXPPerRank.asBool();
 			}
@@ -256,7 +256,7 @@ namespace CustomSkills
 
 		std::vector<std::shared_ptr<TreeNode>> tns;
 		tns.emplace_back(std::make_shared<TreeNode>())->Index = 0;
-		if (const auto& nodes = skill["nodes"]; nodes.isArray()) {
+		if (const auto& nodes = skill["nodes"s]; nodes.isArray()) {
 			std::map<std::string, std::int32_t> ids;
 
 			const std::size_t size = (std::min)(127U, nodes.size());
@@ -265,14 +265,14 @@ namespace CustomSkills
 				tns[0]->Links.push_back(i + 1);
 
 				const auto& node = nodes[i];
-				if (const auto& id = node["id"]; id.isString()) {
+				if (const auto& id = node["id"s]; id.isString()) {
 					ids.emplace(id.asString(), i + 1);
 				}
 			}
 
 			std::int32_t gridWidth = 1;
 			for (const auto& node : nodes) {
-				const auto x = node["x"].asDouble();
+				const auto x = node["x"s].asDouble();
 				gridWidth = (std::max)(gridWidth, static_cast<std::int32_t>(std::ceil(x * 2)));
 			}
 
@@ -283,12 +283,12 @@ namespace CustomSkills
 				const auto& node = nodes[i];
 				const auto& tn = tns.emplace_back(std::make_shared<TreeNode>());
 				tn->Index = i + 1;
-				if (const auto& perk = node["perk"]; perk.isString()) {
+				if (const auto& perk = node["perk"s]; perk.isString()) {
 					tn->Perk = ParseForm<RE::BGSPerk>(dataHandler, perk);
 				}
 
-				const auto x = node["x"].asDouble() + gridWidth * 0.5;
-				const auto y = node["y"].asDouble();
+				const auto x = node["x"s].asDouble() + gridWidth * 0.5;
+				const auto y = node["y"s].asDouble();
 				tn->GridX = (std::max)(static_cast<std::int32_t>(x + 0.58), 0);
 				tn->X = static_cast<float>(x - tn->GridX);
 				tn->GridY = (std::min)(
@@ -296,7 +296,7 @@ namespace CustomSkills
 					4);
 				tn->Y = static_cast<float>(y - tn->GridY);
 
-				if (const auto& links = node["links"]; links.isArray()) {
+				if (const auto& links = node["links"s]; links.isArray()) {
 					for (const auto& link : links) {
 						if (link.isInt()) {
 							// index is 1-based, do not modify
@@ -330,7 +330,7 @@ namespace CustomSkills
 				fileStream >> root;
 			}
 			catch (...) {
-				logger::error("Parse errors in file: {}", a_file.string());
+				logger::error("Parse errors in file: {}"sv, a_file.string());
 			}
 		}
 
@@ -339,31 +339,31 @@ namespace CustomSkills
 
 		auto&& group = std::make_shared<SkillGroup>();
 
-		if (const auto& skydome = root["skydome"]; skydome.isObject()) {
-			group->Skydome = skydome["model"].asString();
-			if (const auto& cameraRightPoint = skydome["cameraRightPoint"];
+		if (const auto& skydome = root["skydome"s]; skydome.isObject()) {
+			group->Skydome = skydome["model"s].asString();
+			if (const auto& cameraRightPoint = skydome["cameraRightPoint"s];
 				cameraRightPoint.isUInt()) {
 				group->CameraRightPoint = cameraRightPoint.asUInt();
 			}
 		}
 
 		if (group->Skydome.empty()) {
-			group->Skydome = "DLC01/Interface/INTVampirePerkSkydome.nif";
+			group->Skydome = "DLC01/Interface/INTVampirePerkSkydome.nif"s;
 		}
 
-		if (const auto& showMenu = root["showMenu"]; showMenu.isString()) {
+		if (const auto& showMenu = root["showMenu"s]; showMenu.isString()) {
 			group->OpenMenu = ParseForm<RE::TESGlobal>(dataHandler, showMenu);
 		}
 
-		if (const auto& debugReload = root["debugReload"]; debugReload.isString()) {
+		if (const auto& debugReload = root["debugReload"s]; debugReload.isString()) {
 			group->DebugReload = ParseForm<RE::TESGlobal>(dataHandler, debugReload);
 		}
 
-		if (const auto& perkPoints = root["perkPoints"]; perkPoints.isString()) {
+		if (const auto& perkPoints = root["perkPoints"s]; perkPoints.isString()) {
 			group->PerkPoints = ParseForm<RE::TESGlobal>(dataHandler, perkPoints);
 		}
 
-		if (const auto& skills = root["skills"]; skills.isArray()) {
+		if (const auto& skills = root["skills"s]; skills.isArray()) {
 			auto actorValue = util::to_underlying(RE::ActorValue::kTotal);
 			for (const auto& skill : skills) {
 				if (skill.isString()) {
@@ -386,7 +386,7 @@ namespace CustomSkills
 					Error(
 						a_file,
 						"Something went wrong when creating skill perk tree! Make sure that no "
-						"missing nodes are referenced in links.");
+						"missing nodes are referenced in links."sv);
 					return nullptr;
 				}
 			}
@@ -428,7 +428,7 @@ namespace CustomSkills
 
 		RE::BSString defaultName;
 		RE::BSString defaultDescription;
-		auto vampireTree = dataHandler->LookupForm<RE::ActorValueInfo>(0x646, "Skyrim.esm");
+		auto vampireTree = dataHandler->LookupForm<RE::ActorValueInfo>(0x646, "Skyrim.esm"sv);
 		if (vampireTree) {
 			defaultName = vampireTree->GetFullName();
 			vampireTree->GetDescription(defaultDescription, nullptr);
@@ -481,7 +481,7 @@ namespace CustomSkills
 
 		std::vector<std::shared_ptr<TreeNode>> nodes;
 		for (std::int32_t i = 0; i < MaxNodes; i++) {
-			auto enable = cv.GetBoolValue("", fmt::format("Node{}.Enable", i).c_str());
+			auto enable = cv.GetBoolValue("", fmt::format("Node{}.Enable"sv, i).c_str());
 			if (!enable) {
 				continue;
 			}
@@ -489,16 +489,16 @@ namespace CustomSkills
 			auto& tn = nodes.emplace_back(std::make_shared<TreeNode>());
 			tn->Index = i;
 
-			auto perkFile = GetStringValue("", fmt::format("Node{}.PerkFile", i).c_str(), "");
-			auto perkId = cv.GetLongValue("", fmt::format("Node{}.PerkId", i).c_str(), 0x0);
+			auto perkFile = GetStringValue("", fmt::format("Node{}.PerkFile"sv, i).c_str(), "");
+			auto perkId = cv.GetLongValue("", fmt::format("Node{}.PerkId"sv, i).c_str(), 0x0);
 			tn->Perk = dataHandler->LookupForm<RE::BGSPerk>(perkId, perkFile);
 
-			tn->X = (float)cv.GetDoubleValue("", fmt::format("Node{}.X", i).c_str());
-			tn->Y = (float)cv.GetDoubleValue("", fmt::format("Node{}.Y", i).c_str());
-			tn->GridX = cv.GetLongValue("", fmt::format("Node{}.GridX", i).c_str());
-			tn->GridY = cv.GetLongValue("", fmt::format("Node{}.GridY", i).c_str());
+			tn->X = (float)cv.GetDoubleValue("", fmt::format("Node{}.X"sv, i).c_str());
+			tn->Y = (float)cv.GetDoubleValue("", fmt::format("Node{}.Y"sv, i).c_str());
+			tn->GridX = cv.GetLongValue("", fmt::format("Node{}.GridX"sv, i).c_str());
+			tn->GridY = cv.GetLongValue("", fmt::format("Node{}.GridY"sv, i).c_str());
 
-			std::string links = GetStringValue("", fmt::format("Node{}.Links", i).c_str(), "");
+			std::string links = GetStringValue("", fmt::format("Node{}.Links"sv, i).c_str(), "");
 			if (!links.empty()) {
 				const std::string delims = " \t,";
 				std::size_t beg, pos = 0;
@@ -513,7 +513,7 @@ namespace CustomSkills
 						Error(
 							a_file,
 							fmt::format(
-								"Format error in Node{}.Links! Unable to parse integer from {}!",
+								"Format error in Node{}.Links! Unable to parse integer from {}!"sv,
 								i,
 								token));
 						return nullptr;
@@ -530,7 +530,7 @@ namespace CustomSkills
 			Error(
 				a_file,
 				"Something went wrong when creating skill perk tree! Make sure node 0 exists and "
-				"no missing nodes are referenced in links.");
+				"no missing nodes are referenced in links."sv);
 		}
 
 		return group;
@@ -539,7 +539,7 @@ namespace CustomSkills
 	void Settings::Error(const std::filesystem::path& a_file, std::string_view a_message)
 	{
 		logger::error(
-			"CustomSkills plugin: Failed to read skill from file `{}`: {}",
+			"CustomSkills plugin: Failed to read skill from file `{}`: {}"sv,
 			a_file.string(),
 			a_message);
 	}
