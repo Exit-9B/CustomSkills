@@ -25,6 +25,8 @@ namespace Papyrus
 			std::string asSkillId,
 			std::int32_t aiSkillLevel);
 
+		void DebugReload(RE::StaticFunctionTag*);
+
 		bool RegisterFuncs(RE::BSScript::IVirtualMachine* a_vm);
 	}
 }

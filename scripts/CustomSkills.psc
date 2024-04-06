@@ -21,3 +21,6 @@ Function IncrementSkillBy(string asSkillId, int aiCount) global native
 
 ; Displays the skill increase message on the HUD for the given skill and level.
 Function ShowSkillIncreaseMessage(string asSkillId, int aiSkillLevel) global native
+
+; Reload configurations. For debug usage only.
+Function DebugReload() global native
