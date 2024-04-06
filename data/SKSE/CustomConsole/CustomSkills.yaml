@@ -1,0 +1,38 @@
+name: customskills
+alias: csf
+script: CustomSkills
+help: Custom Skills Framework
+subs:
+  - name: showstatsmenu
+    func: OpenCustomSkillMenu
+    help: Open the custom skill menu. [csf showstatsmenu myskill]
+    args:
+      - name: skill
+        type: string
+        default: SKILLS
+        help: The skill or group to show the menu for
+  - name: advanceskill
+    alias: advskill
+    func: AdvanceSkill
+    help: Give the player the given amount of skill usage. [csf advskill myskill 100]
+    args:
+      - name: skill
+        type: string
+        required: true
+        help: The skill to increase
+      - name: amount
+        type: float
+        required: true
+        help: The amount of skill usage
+  - name: incrementpcskill
+    alias: incpcs
+    func: IncrementSkill
+    help: Increase the player's skill by one point. [csf incpcs myskill]
+    args:
+      - name: skill
+        type: string
+        required: true
+        help: The skill to increase
+  - name: reload
+    func: DebugReload
+    help: Reload configurations.
