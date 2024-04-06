@@ -1,3 +1,10 @@
+/**
+ * @file Events.h
+ *
+ * Copyright (c) Parapets
+ * SPDX-License-Identifier: MIT
+ */
+
 #pragma once
 
 #include "Stubs.h"
