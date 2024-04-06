@@ -57,10 +57,20 @@ namespace util
 
 	struct iless
 	{
-		template <std::ranges::contiguous_range R1, std::ranges::contiguous_range R2>
-		bool operator()(R1&& a_str1, R2&& a_str2) const
+		using is_transparent = int;
+
+		template <std::ranges::contiguous_range S1, std::ranges::contiguous_range S2>
+			requires(
+				std::is_same_v<std::ranges::range_value_t<S1>, char> &&
+				std::is_same_v<std::ranges::range_value_t<S2>, char>)
+		bool operator()(S1&& a_str1, S2&& a_str2) const
 		{
-			return ::_stricmp(std::ranges::data(a_str1), std::ranges::data(a_str2)) < 0;
+			if (std::size(a_str1) < std::size(a_str2)) {
+				return ::_strnicmp(std::data(a_str1), std::data(a_str2), std::size(a_str1)) <= 0;
+			}
+			else {
+				return ::_strnicmp(std::data(a_str1), std::data(a_str2), std::size(a_str2)) < 0;
+			}
 		}
 	};
 
