@@ -1,7 +1,7 @@
 #include "CustomSkillsInterface.h"
 
 #include "CustomSkillsManager.h"
-#include "SkillIncreaseEventSource.h"
+#include "EventSources.h"
 
 namespace CustomSkills::Impl
 {
@@ -43,7 +43,7 @@ namespace CustomSkills::Impl
 	{
 		switch (static_cast<Dispatcher>(a_dispatcherID)) {
 		case Dispatcher::kSkillIncreaseEvent:
-			return SkillIncreaseEventSource::Instance();
+			return SkillIncreaseEventSource::Get();
 		}
 		return nullptr;
 	}

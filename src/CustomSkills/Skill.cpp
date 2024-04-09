@@ -1,5 +1,5 @@
 #include "Skill.h"
-#include "SkillIncreaseEventSource.h"
+#include "EventSources.h"
 
 namespace CustomSkills
 {
@@ -82,7 +82,7 @@ namespace CustomSkills
 
 		if (levelIncreased) {
 			SkillIncreaseEvent ev{ .skillID = GetName().data() };
-			SkillIncreaseEventSource::Instance()->SendEvent(&ev);
+			SkillIncreaseEventSource::Get()->SendEvent(&ev);
 			if (!a_hideNotification) {
 				Game::ShowSkillIncreasedMessage(GetName(), level);
 			}
@@ -122,7 +122,7 @@ namespace CustomSkills
 			Level->value = static_cast<float>(level);
 
 			SkillIncreaseEvent ev{ .skillID = GetName().data() };
-			SkillIncreaseEventSource::Instance()->SendEvent(&ev);
+			SkillIncreaseEventSource::Get()->SendEvent(&ev);
 			Game::ShowSkillIncreasedMessage(GetName(), level);
 		}
 	}
