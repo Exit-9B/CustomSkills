@@ -34,6 +34,13 @@ namespace CustomSkills
 		[[nodiscard]] std::uint32_t Version() const;
 
 		/**
+		 * Open the custom skill menu for the given skill or group (config file).
+		 *
+		 * @param[in] a_skillId The ID of the skill or group to open the menu for.
+		 */
+		void ShowStatsMenu(const char* a_skillId);
+
+		/**
 		 * Advance the given skill by the provided amount of skill usage.
 		 *
 		 * @param[in] a_skillId   The ID of the skill to advance.

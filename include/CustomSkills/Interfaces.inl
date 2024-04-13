@@ -22,6 +22,11 @@ namespace CustomSkills
 		return GetProxy()->interfaceVersion;
 	}
 
+	inline void CustomSkillsInterface::ShowStatsMenu(const char* a_skillId)
+	{
+		GetProxy()->ShowStatsMenu(a_skillId);
+	}
+
 	inline void CustomSkillsInterface::AdvanceSkill(const char* a_skillId, float a_magnitude)
 	{
 		GetProxy()->AdvanceSkill(a_skillId, a_magnitude);

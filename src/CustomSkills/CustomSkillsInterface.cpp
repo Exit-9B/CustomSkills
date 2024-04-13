@@ -18,11 +18,24 @@ namespace CustomSkills::Impl
 	{
 		static detail::CustomSkillsInterface intfc{
 			.interfaceVersion = InterfaceVersion,
+			.ShowStatsMenu = &ShowStatsMenu,
 			.AdvanceSkill = &AdvanceSkill,
 			.IncrementSkill = &IncrementSkill,
 			.GetEventDispatcher = &GetEventDispatcher,
 		};
 		return std::addressof(intfc);
+	}
+
+	void CustomSkillsInterface::ShowStatsMenu(const char* a_skillId)
+	{
+		if (const auto group = CustomSkillsManager::FindSkillMenu(a_skillId)) {
+			CustomSkillsManager::OpenStatsMenu(group);
+		}
+		else if (const auto [origin, index] = CustomSkillsManager::FindSkillOrigin(a_skillId);
+				 origin) {
+			origin->LastSelectedTree = static_cast<std::uint32_t>(index);
+			CustomSkillsManager::OpenStatsMenu(origin);
+		}
 	}
 
 	void CustomSkillsInterface::AdvanceSkill(const char* a_skillId, float a_magnitude)
