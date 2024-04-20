@@ -44,8 +44,8 @@ namespace CustomSkills
 					menu->skillTrees.push_back(CustomSkillsManager::_menuSkills->ActorValues[i]);
 				}
 				for (std::uint32_t i = numSkills; i < 18; ++i) {
-					menu->skillTrees.push_back(static_cast<RE::ActorValue>(
-						util::to_underlying(RE::ActorValue::kTotal) + i));
+					menu->skillTrees.push_back(
+						static_cast<RE::ActorValue>(CUSTOM_SKILL_BASE_VALUE + i));
 				}
 			}
 			return menu;

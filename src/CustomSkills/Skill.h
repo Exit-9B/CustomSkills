@@ -4,6 +4,9 @@
 
 namespace CustomSkills
 {
+	// magic number so we don't conflict with other mods using the same mechanism for AVs
+	constexpr std::uint32_t CUSTOM_SKILL_BASE_VALUE = 'CSF' << 8;
+
 	class Skill final
 	{
 	public:

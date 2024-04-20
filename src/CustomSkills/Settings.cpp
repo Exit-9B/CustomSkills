@@ -364,7 +364,7 @@ namespace CustomSkills
 		}
 
 		if (const auto& skills = root["skills"s]; skills.isArray()) {
-			auto actorValue = util::to_underlying(RE::ActorValue::kTotal);
+			auto actorValue = CUSTOM_SKILL_BASE_VALUE;
 			for (const auto& skill : skills) {
 				if (skill.isString()) {
 					group->Skills.emplace_back(nullptr);
