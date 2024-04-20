@@ -23,7 +23,7 @@ namespace CustomSkills
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::Create, 0x5D);
 		REL::make_pattern<"E8">().match_or_fail(hook.address());
 
-		using StatsMenu_ctor_t = RE::StatsMenu* (RE::StatsMenu*);
+		using StatsMenu_ctor_t = RE::StatsMenu*(RE::StatsMenu*);
 		static REL::Relocation<StatsMenu_ctor_t> _StatsMenu_ctor;
 
 		auto SetupStatsMenu = +[](RE::StatsMenu* a_mem)
@@ -44,8 +44,8 @@ namespace CustomSkills
 					menu->skillTrees.push_back(CustomSkillsManager::_menuSkills->ActorValues[i]);
 				}
 				for (std::uint32_t i = numSkills; i < 18; ++i) {
-					menu->skillTrees.push_back(static_cast<RE::ActorValue>(
-						util::to_underlying(RE::ActorValue::kTotal) + i));
+					menu->skillTrees.push_back(
+						static_cast<RE::ActorValue>(CUSTOM_SKILL_BASE_VALUE + i));
 				}
 			}
 			return menu;

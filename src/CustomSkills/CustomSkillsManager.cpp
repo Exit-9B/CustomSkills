@@ -257,8 +257,7 @@ namespace CustomSkills
 
 	std::shared_ptr<Skill> CustomSkillsManager::GetCurrentSkill(RE::ActorValue a_value)
 	{
-		const std::uint32_t index = util::to_underlying(a_value) -
-			util::to_underlying(RE::ActorValue::kTotal);
+		const std::uint32_t index = util::to_underlying(a_value) - CUSTOM_SKILL_BASE_VALUE;
 
 		if (_menuSkills && index < _menuSkills->Skills.size()) {
 			return _menuSkills->Skills[index];

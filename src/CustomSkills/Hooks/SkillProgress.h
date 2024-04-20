@@ -8,9 +8,6 @@ namespace CustomSkills
 		static void WriteHooks();
 
 	private:
-		// Get/set values for custom skills
-		static void ActorValueOwnerPatch();
-
 		// Show skill level and XP
 		static void SkillProgressPatch();
 
