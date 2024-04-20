@@ -10,66 +10,11 @@ namespace CustomSkills
 {
 	void SkillProgress::WriteHooks()
 	{
-		ActorValueOwnerPatch();
 		SkillProgressPatch();
 		CurrentPerkPointsPatch();
 		SelectPerkPatch();
 		HideLevelPatch();
 		RequirementsTextPatch();
-	}
-
-	void SkillProgress::ActorValueOwnerPatch()
-	{
-		auto vtbl = REL::Relocation<std::uintptr_t>(
-			RE::Offset::PlayerCharacter::Vtbl_ActorValueOwner);
-
-		using GetActorValue_t = float (RE::PlayerCharacter::*)(RE::ActorValue) const;
-		static REL::Relocation<GetActorValue_t> _GetActorValue;
-
-		auto GetActorValue = +[](const RE::PlayerCharacter* a_player, RE::ActorValue a_actorValue)
-			-> float
-		{
-			if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_actorValue)) {
-				return skill->GetLevel();
-			}
-
-			return _GetActorValue(a_player, a_actorValue);
-		};
-
-		_GetActorValue = vtbl.write_vfunc(1, GetActorValue);
-
-		using GetBaseActorValue_t = float (RE::PlayerCharacter::*)(RE::ActorValue) const;
-		static REL::Relocation<GetBaseActorValue_t> _GetBaseActorValue;
-
-		auto GetBaseActorValue =
-			+[](const RE::PlayerCharacter* a_player, RE::ActorValue a_actorValue) -> float
-		{
-			if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_actorValue)) {
-				return skill->GetLevel();
-			}
-
-			return _GetBaseActorValue(a_player, a_actorValue);
-		};
-
-		_GetBaseActorValue = vtbl.write_vfunc(3, GetBaseActorValue);
-
-		using SetBaseActorValue_t = float (RE::PlayerCharacter::*)(RE::ActorValue);
-		static REL::Relocation<SetBaseActorValue_t> _SetBaseActorValue;
-
-		auto SetBaseActorValue =
-			+[](RE::PlayerCharacter* a_player, RE::ActorValue a_actorValue, float a_value)
-		{
-			if (const auto skill = CustomSkillsManager::GetCurrentSkill(a_actorValue)) {
-				if (skill->Level) {
-					skill->Level->value = a_value;
-				}
-			}
-			else {
-				_SetBaseActorValue(a_player, a_actorValue);
-			}
-		};
-
-		_SetBaseActorValue = vtbl.write_vfunc(4, SetBaseActorValue);
 	}
 
 	void SkillProgress::GetSkillProgress(

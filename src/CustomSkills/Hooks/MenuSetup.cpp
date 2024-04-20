@@ -23,7 +23,7 @@ namespace CustomSkills
 		auto hook = REL::Relocation<std::uintptr_t>(RE::Offset::StatsMenu::Create, 0x5D);
 		REL::make_pattern<"E8">().match_or_fail(hook.address());
 
-		using StatsMenu_ctor_t = RE::StatsMenu* (RE::StatsMenu*);
+		using StatsMenu_ctor_t = RE::StatsMenu*(RE::StatsMenu*);
 		static REL::Relocation<StatsMenu_ctor_t> _StatsMenu_ctor;
 
 		auto SetupStatsMenu = +[](RE::StatsMenu* a_mem)
