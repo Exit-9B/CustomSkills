@@ -7,11 +7,6 @@ namespace CustomSkills
 {
 	void ActorValue::WriteHooks()
 	{
-		ActorValueOwnerPatch();
-	}
-
-	void ActorValue::ActorValueOwnerPatch()
-	{
 		auto vtbl = REL::Relocation<std::uintptr_t>(
 			RE::Offset::PlayerCharacter::Vtbl_ActorValueOwner);
 
