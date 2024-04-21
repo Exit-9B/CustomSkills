@@ -1,3 +1,5 @@
+#pragma once
+
 namespace CustomSkills
 {
 	class ActorValue final
@@ -6,9 +8,6 @@ namespace CustomSkills
 		static void WriteHooks();
 
 	private:
-		// Get/set values for custom skills
-		static void ActorValueOwnerPatch();
-
 		static float GetActorValue(
 			const RE::ActorValueOwner* a_owner,
 			RE::ActorValue a_actorValue);
