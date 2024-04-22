@@ -400,6 +400,7 @@ namespace CustomSkills
 	{
 		auto group = std::make_shared<SkillGroup>();
 		const auto& sk = group->Skills.emplace_back(std::make_shared<Skill>());
+		group->ActorValues.push_back(static_cast<RE::ActorValue>(CUSTOM_SKILL_BASE_VALUE));
 
 		::CSimpleIniA cv;
 		cv.SetUnicode();
