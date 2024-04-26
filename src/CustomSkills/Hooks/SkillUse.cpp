@@ -45,6 +45,33 @@ namespace CustomSkills
 		return nullptr;
 	}
 
+	[[nodiscard]] static std::shared_ptr<Skill> GetObjectSkill(const RE::TESForm* a_object)
+	{
+		const auto keywordForm = skyrim_cast<const RE::BGSKeywordForm*>(a_object);
+		if (!keywordForm)
+			return nullptr;
+
+		for (const RE::BGSKeyword* const keyword :
+			 std::span(keywordForm->keywords, keywordForm->numKeywords)) {
+
+			if (!keyword)
+				continue;
+
+			const auto str = std::string_view(keyword->formEditorID);
+			static constexpr auto prefix = "CustomSkillAdvance_"sv;
+			if (str.size() <= prefix.size() ||
+				::_strnicmp(str.data(), prefix.data(), prefix.size()) != 0) {
+				continue;
+			}
+
+			if (const auto skill = CustomSkillsManager::FindSkill(str.substr(prefix.size()))) {
+				return skill;
+			}
+		}
+
+		return nullptr;
+	}
+
 	static bool UpdateBottomBar(RE::CraftingSubMenus::ConstructibleObjectMenu* a_menu)
 	{
 		const auto skill = GetWorkbenchSkill(a_menu->furniture);
@@ -163,26 +190,9 @@ namespace CustomSkills
 		std::uint32_t a_advanceAction)
 	{
 		if (a_skill == RE::ActorValue::kNone) {
-			if (const auto keywordForm = skyrim_cast<RE::BGSKeywordForm*>(a_advanceObject)) {
-				for (const RE::BGSKeyword* const keyword :
-					 std::span(keywordForm->keywords, keywordForm->numKeywords)) {
-
-					if (!keyword)
-						continue;
-
-					const auto str = std::string_view(keyword->formEditorID);
-					static constexpr auto prefix = "CustomSkillAdvance_"sv;
-					if (str.size() <= prefix.size() ||
-						::_strnicmp(str.data(), prefix.data(), prefix.size()) != 0) {
-						continue;
-					}
-
-					if (const auto skill = CustomSkillsManager::FindSkill(
-							str.substr(prefix.size()))) {
-						skill->Advance(a_amount, a_advanceObject);
-						return;
-					}
-				}
+			if (const auto skill = GetObjectSkill(a_advanceObject)) {
+				skill->Advance(a_amount);
+				return;
 			}
 		}
 
