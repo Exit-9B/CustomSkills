@@ -32,7 +32,11 @@ namespace CustomSkills
 		player->skills->data->xp += a_rankGained * xpPerSkillRank;
 	}
 
-	void Skill::Advance(float a_magnitude, bool a_isSkillUse, bool a_hideNotification)
+	void Skill::Advance(
+		float a_magnitude,
+		RE::TESForm* a_advanceObject,
+		bool a_isSkillUse,
+		bool a_hideNotification)
 	{
 		if (!Level || !Ratio || !Info || !Info->skill)
 			return;
@@ -47,7 +51,7 @@ namespace CustomSkills
 		float xp = a_isSkillUse ? std::fma(a_magnitude, useMult, useOffset) : a_magnitude;
 		const auto player = RE::PlayerCharacter::GetSingleton();
 		player->advanceSkill = RE::ActorValue::kNone;
-		player->advanceObject = AdvanceObject;
+		player->advanceObject = a_advanceObject;
 		player->advanceAction = 0;
 		RE::BGSEntryPoint::HandleEntryPoint(
 			RE::BGSEntryPoint::ENTRY_POINT::kModSkillUse,
@@ -89,6 +93,11 @@ namespace CustomSkills
 		}
 	}
 
+	void Skill::Advance(float a_magnitude)
+	{
+		Advance(a_magnitude, AdvanceObject, true, false);
+	}
+
 	void Skill::Increment(std::uint32_t a_count)
 	{
 		if (a_count == 0 || !Level || !Info || !Info->skill)
@@ -108,7 +117,7 @@ namespace CustomSkills
 				const float ratio = (std::min)(Ratio->value, 1.0f);
 				const float xp = CalcLevelThreshold(level, improveMult, improveOffset) *
 					(1.0f - ratio);
-				Advance(xp, false, i < count - 1);
+				Advance(xp, AdvanceObject, false, i < count - 1);
 				level = static_cast<std::int32_t>(Level->value);
 			}
 		}

@@ -1,4 +1,4 @@
-#include "Crafting.h"
+#include "SkillUse.h"
 
 #include "CustomSkills/CustomSkillsManager.h"
 #include "RE/Offset.h"
@@ -7,10 +7,18 @@
 
 namespace CustomSkills
 {
-	void Crafting::WriteHooks()
+	void SkillUse::WriteHooks()
 	{
+		UseSkillPatch();
 		ConstructibleObjectBottomBarPatch();
 		ConstructibleObjectCreationPatch();
+	}
+
+	void SkillUse::UseSkillPatch()
+	{
+		auto vtbl = REL::Relocation<std::uintptr_t>(RE::Offset::PlayerCharacter::Vtbl);
+
+		_UseSkill = vtbl.write_vfunc(247, &SkillUse::UseSkill);
 	}
 
 	[[nodiscard]] static std::shared_ptr<Skill> GetWorkbenchSkill(
@@ -29,9 +37,7 @@ namespace CustomSkills
 				continue;
 			}
 
-			const auto skill = CustomSkillsManager::FindSkill(str.substr(prefix.size()));
-
-			if (skill) {
+			if (const auto skill = CustomSkillsManager::FindSkill(str.substr(prefix.size()))) {
 				return skill;
 			}
 		}
@@ -55,7 +61,7 @@ namespace CustomSkills
 		return true;
 	}
 
-	void Crafting::ConstructibleObjectBottomBarPatch()
+	void SkillUse::ConstructibleObjectBottomBarPatch()
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(
 			RE::Offset::CraftingSubMenus::ConstructibleObjectMenu::UpdateBottomBar,
@@ -108,7 +114,7 @@ namespace CustomSkills
 		}
 	}
 
-	void Crafting::ConstructibleObjectCreationPatch()
+	void SkillUse::ConstructibleObjectCreationPatch()
 	{
 		auto hook = REL::Relocation<std::uintptr_t>(
 			RE::Offset::CraftingSubMenus::ConstructibleObjectMenu::CreationConfirmed,
@@ -147,5 +153,39 @@ namespace CustomSkills
 		// TRAMPOLINE: 14
 		auto& trampoline = SKSE::GetTrampoline();
 		trampoline.write_branch<5>(hook.address(), patch->getCode());
+	}
+
+	void SkillUse::UseSkill(
+		RE::PlayerCharacter* a_player,
+		RE::ActorValue a_skill,
+		float a_amount,
+		RE::TESForm* a_advanceObject,
+		std::uint32_t a_advanceAction)
+	{
+		if (a_skill == RE::ActorValue::kNone) {
+			if (const auto keywordForm = skyrim_cast<RE::BGSKeywordForm*>(a_advanceObject)) {
+				for (const RE::BGSKeyword* const keyword :
+					 std::span(keywordForm->keywords, keywordForm->numKeywords)) {
+
+					if (!keyword)
+						continue;
+
+					const auto str = std::string_view(keyword->formEditorID);
+					static constexpr auto prefix = "CustomSkillAdvance_"sv;
+					if (str.size() <= prefix.size() ||
+						::_strnicmp(str.data(), prefix.data(), prefix.size()) != 0) {
+						continue;
+					}
+
+					if (const auto skill = CustomSkillsManager::FindSkill(
+							str.substr(prefix.size()))) {
+						skill->Advance(a_amount, a_advanceObject);
+						return;
+					}
+				}
+			}
+		}
+
+		return _UseSkill(a_player, a_skill, a_amount, a_advanceObject, a_advanceAction);
 	}
 }
