@@ -68,5 +68,3 @@ namespace Papyrus
 	template struct Events<RE::BGSBaseAlias>;
 	template struct Events<RE::ActiveEffect>;
 }
-
-#undef REGISTER_ALL
