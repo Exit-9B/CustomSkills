@@ -18,6 +18,12 @@ namespace CustomSkills::Serialization
 		return ss.str();
 	}
 
+	void FormDeleteCallback(RE::VMHandle a_handle)
+	{
+		CustomSkillIncreaseRegSet::Get()->ObjectDeleted(a_handle);
+		CustomSkillBookReadRegSet::Get()->ObjectDeleted(a_handle);
+	}
+
 	void LoadCallback(SKSE::SerializationInterface* a_intfc)
 	{
 		std::uint32_t type;

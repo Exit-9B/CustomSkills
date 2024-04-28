@@ -24,6 +24,8 @@ namespace CustomSkills
 		bool Load(SKSE::SerializationInterface* a_intfc);
 		void SendEvent(std::string_view a_skillId, std::int32_t a_increment);
 
+		void ObjectDeleted(RE::VMHandle a_handle);
+
 	private:
 		using Lock = std::recursive_mutex;
 		using Locker = std::lock_guard<Lock>;

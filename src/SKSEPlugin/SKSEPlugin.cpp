@@ -101,6 +101,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	auto* const serialization = SKSE::GetSerializationInterface();
 	serialization->SetUniqueID(Serialization::ID);
+	serialization->SetFormDeleteCallback(&Serialization::FormDeleteCallback);
 	serialization->SetLoadCallback(&Serialization::LoadCallback);
 	serialization->SetRevertCallback(&Serialization::RevertCallback);
 	serialization->SetSaveCallback(&Serialization::SaveCallback);

@@ -10,5 +10,7 @@ namespace CustomSkills
 		static CustomSkillIncreaseRegSet* Get();
 
 		CustomSkillIncreaseRegSet() : super("OnCustomSkillIncrease"sv) {}
+
+		void ObjectDeleted(RE::VMHandle a_handle);
 	};
 }
