@@ -1,5 +1,6 @@
 #include "SkillBooks.h"
 
+#include "CustomSkills/CustomSkillBookReadRegSet.h"
 #include "CustomSkills/CustomSkillsManager.h"
 #include "RE/Offset.h"
 
@@ -41,7 +42,8 @@ namespace CustomSkills
 				player,
 				&count);
 
-			skill->Increment(static_cast<std::int32_t>(count));
+			CustomSkillBookReadRegSet::Get()
+				->SendEvent(skill->ID, static_cast<std::int32_t>(count));
 			return true;
 		}
 
