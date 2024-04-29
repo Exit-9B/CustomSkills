@@ -48,13 +48,18 @@ target_link_libraries(
 )
 
 if(SkyrimSE_PATH)
+	file(GLOB SCRIPT_SOURCES
+		LIST_DIRECTORIES false
+		CONFIGURE_DEPENDS
+		"${PROJECT_SOURCE_DIR}/scripts/*.psc"
+	)
+
 	Papyrus_Add(
 		"PapyrusAPI"
 		GAME ${SkyrimSE_PATH}
 		IMPORTS
 			"${PROJECT_SOURCE_DIR}/scripts"
-		SOURCES
-			"${PROJECT_SOURCE_DIR}/scripts/CustomSkills.psc"
+		SOURCES ${SCRIPT_SOURCES}
 		OPTIMIZE
 		ANONYMIZE
 		COMPONENT ${CMAKE_INSTALL_DEFAULT_COMPONENT_NAME}

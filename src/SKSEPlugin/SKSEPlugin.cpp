@@ -13,7 +13,9 @@
 #include "CustomSkills/Hooks/SkillUse.h"
 #include "CustomSkills/Hooks/Training.h"
 #include "CustomSkills/Hooks/Update.h"
+#include "CustomSkills/Serialization.h"
 #include "Papyrus/CustomSkills.h"
+#include "Papyrus/Events.h"
 
 namespace
 {
@@ -85,9 +87,27 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	SkillBooks::WriteHooks();
 	SkillUse::WriteHooks();
 
-	SKSE::GetPapyrusInterface()->Register(Papyrus::CustomSkills::RegisterFuncs);
+	auto* const papyrus = SKSE::GetPapyrusInterface();
+	papyrus->Register(
+		[](RE::BSScript::IVirtualMachine* a_vm)
+		{
+			Papyrus::CustomSkills::RegisterFuncs(a_vm);
+			Papyrus::Events<RE::TESForm>::RegisterFuncs(a_vm);
+			Papyrus::Events<RE::BGSBaseAlias>::RegisterFuncs(a_vm);
+			Papyrus::Events<RE::ActiveEffect>::RegisterFuncs(a_vm);
 
-	SKSE::GetMessagingInterface()->RegisterListener(
+			return true;
+		});
+
+	auto* const serialization = SKSE::GetSerializationInterface();
+	serialization->SetUniqueID(Serialization::ID);
+	serialization->SetFormDeleteCallback(&Serialization::FormDeleteCallback);
+	serialization->SetLoadCallback(&Serialization::LoadCallback);
+	serialization->SetRevertCallback(&Serialization::RevertCallback);
+	serialization->SetSaveCallback(&Serialization::SaveCallback);
+
+	auto* const messaging = SKSE::GetMessagingInterface();
+	messaging->RegisterListener(
 		[](auto a_msg)
 		{
 			switch (a_msg->type) {

@@ -97,49 +97,6 @@ namespace CustomSkills
 		return dataHandler->LookupForm<T>(rawFormID, file);
 	}
 
-	static RE::ActorValue ParseSkill(const Json::Value& a_val)
-	{
-		static constexpr auto SKILLS = std::to_array<std::pair<std::string_view, RE::ActorValue>>({
-			{ "Alchemy"sv, RE::ActorValue::kAlchemy },
-			{ "Alteration"sv, RE::ActorValue::kAlteration },
-			{ "Block"sv, RE::ActorValue::kBlock },
-			{ "Conjuration"sv, RE::ActorValue::kConjuration },
-			{ "Destruction"sv, RE::ActorValue::kDestruction },
-			{ "Enchanting"sv, RE::ActorValue::kEnchanting },
-			{ "HeavyArmor"sv, RE::ActorValue::kHeavyArmor },
-			{ "Illusion"sv, RE::ActorValue::kIllusion },
-			{ "LightArmor"sv, RE::ActorValue::kLightArmor },
-			{ "Lockpicking"sv, RE::ActorValue::kLockpicking },
-			{ "Marksman"sv, RE::ActorValue::kArchery },
-			{ "OneHanded"sv, RE::ActorValue::kOneHanded },
-			{ "Pickpocket"sv, RE::ActorValue::kPickpocket },
-			{ "Restoration"sv, RE::ActorValue::kRestoration },
-			{ "Smithing"sv, RE::ActorValue::kSmithing },
-			{ "Sneak"sv, RE::ActorValue::kSneak },
-			{ "Speechcraft"sv, RE::ActorValue::kSpeech },
-			{ "TwoHanded"sv, RE::ActorValue::kTwoHanded },
-			{ "VampirePerks"sv, RE::ActorValue::kVampirePerks },
-			{ "WerewolfPerks"sv, RE::ActorValue::kWerewolfPerks },
-		});
-		static_assert(std::ranges::is_sorted(SKILLS));
-
-		const Json::String str = a_val.asString();
-		const auto it = std::ranges::lower_bound(
-			SKILLS,
-			std::string_view(str),
-			util::iless{},
-			[](auto&& kv)
-			{
-				return kv.first;
-			});
-
-		if (it != std::end(SKILLS) && ::_stricmp(it->first.data(), str.data()) == 0) {
-			return it->second;
-		}
-
-		return RE::ActorValue::kHealth;
-	}
-
 	static RE::TESForm* CreateAdvanceObject(RE::BGSKeyword* a_keyword)
 	{
 		const auto factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::TESObjectACTI>();
@@ -368,7 +325,8 @@ namespace CustomSkills
 			for (const auto& skill : skills) {
 				if (skill.isString()) {
 					group->Skills.emplace_back(nullptr);
-					group->ActorValues.push_back(ParseSkill(skill.asString()));
+					group->ActorValues.push_back(
+						util::ParseSkill(skill.asString()).value_or(RE::ActorValue::kHealth));
 					++actorValue;
 					continue;
 				}
