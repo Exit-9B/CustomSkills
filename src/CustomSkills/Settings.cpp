@@ -29,12 +29,23 @@ namespace CustomSkills
 
 			if (const auto group = ReadSkills(entry.path())) {
 				if (::_stricmp(key.data(), "SKILLS") == 0) {
-					REL::Relocation<std::uint32_t*> lastSelectedTree{
-						RE::Offset::StatsMenu::LastSelectedTree
-					};
+					static constinit bool firstInit = true;
+					const auto count = static_cast<std::uint32_t>(group->Skills.size());
+					if (firstInit) {
+						// starting value is 15, centered on mage?
+						const auto tree = static_cast<std::uint32_t>(0.5 + count * (2.5 / 3.0));
+						if (tree < count)
+							group->LastSelectedTree = tree;
+						firstInit = false;
+					}
+					else {
+						REL::Relocation<std::uint32_t*> lastSelectedTree{
+							RE::Offset::StatsMenu::LastSelectedTree
+						};
 
-					if (*lastSelectedTree < group->Skills.size()) {
-						group->LastSelectedTree = *lastSelectedTree;
+						if (*lastSelectedTree < count) {
+							group->LastSelectedTree = *lastSelectedTree;
+						}
 					}
 				}
 
