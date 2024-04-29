@@ -40,7 +40,7 @@ namespace CustomSkills
 				}
 
 				name.SetString(skill->GetName());
-				percent.SetNumber(skill->Ratio ? skill->Ratio->value * 100 : 0.0);
+				percent.SetNumber(skill->GetProgressPercent());
 
 				if (skill->UpdateColor()) {
 					color.SetString(skill->ColorStr);
@@ -63,7 +63,7 @@ namespace CustomSkills
 				const std::size_t idx = util::to_underlying(actorValue) - 6;
 				if (playerSkills && idx < 18) {
 					const auto& data = playerSkills->data->skills[idx];
-					level.SetNumber(data.level);
+					level.SetNumber(player->GetActorValue(actorValue));
 					percent.SetNumber((data.xp / data.levelThreshold) * 100);
 
 					legendary.SetNumber(

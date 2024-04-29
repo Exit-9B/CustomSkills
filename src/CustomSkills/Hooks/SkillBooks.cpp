@@ -1,5 +1,6 @@
 #include "SkillBooks.h"
 
+#include "CustomSkills/CustomSkillBookReadRegSet.h"
 #include "CustomSkills/CustomSkillsManager.h"
 #include "RE/Offset.h"
 
@@ -24,14 +25,13 @@ namespace CustomSkills
 				continue;
 
 			const auto str = std::string_view(keyword->formEditorID);
-			constexpr auto prefix = "CustomSkillBook_"sv;
+			static constexpr auto prefix = "CustomSkillBook_"sv;
 			if (str.size() <= prefix.size() ||
 				::_strnicmp(str.data(), prefix.data(), prefix.size()) != 0) {
 				continue;
 			}
 
-			const auto skill = CustomSkillsManager::FindSkill(
-				std::string(str.substr(prefix.size())));
+			const auto skill = CustomSkillsManager::FindSkill(str.substr(prefix.size()));
 			if (!skill)
 				continue;
 
@@ -42,7 +42,8 @@ namespace CustomSkills
 				player,
 				&count);
 
-			skill->Increment(static_cast<std::int32_t>(count));
+			CustomSkillBookReadRegSet::Get()
+				->SendEvent(skill->ID, static_cast<std::int32_t>(count));
 			return true;
 		}
 

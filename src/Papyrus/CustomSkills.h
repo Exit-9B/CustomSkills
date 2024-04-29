@@ -20,10 +20,16 @@ namespace Papyrus
 
 		void IncrementSkillBy(RE::StaticFunctionTag*, std::string asSkillId, std::int32_t aiCount);
 
+		std::string GetSkillName(RE::StaticFunctionTag*, std::string asSkillId);
+
+		std::int32_t GetSkillLevel(RE::StaticFunctionTag*, std::string asSkillId);
+
 		void ShowSkillIncreaseMessage(
 			RE::StaticFunctionTag*,
 			std::string asSkillId,
 			std::int32_t aiSkillLevel);
+
+		void DebugReload(RE::StaticFunctionTag*);
 
 		bool RegisterFuncs(RE::BSScript::IVirtualMachine* a_vm);
 	}

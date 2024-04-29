@@ -1,7 +1,7 @@
 Scriptname CustomSkills Native Hidden
 
 ; Get the current Custom Skills API version.
-; Current version: 2
+; Current version: 3
 int Function GetAPIVersion() global native
 
 ; Open the custom skill menu for the given skill or group (config file).
@@ -19,5 +19,14 @@ Function IncrementSkill(string asSkillId) global native
 ; Increment the given skill by the given number of points.
 Function IncrementSkillBy(string asSkillId, int aiCount) global native
 
+; Get the display name of the given skill.
+string Function GetSkillName(string asSkillId) global native
+
+; Get the current level of the given skill.
+int Function GetSkillLevel(string asSkillId) global native
+
 ; Displays the skill increase message on the HUD for the given skill and level.
 Function ShowSkillIncreaseMessage(string asSkillId, int aiSkillLevel) global native
+
+; Reload configurations. For debug usage only.
+Function DebugReload() global native

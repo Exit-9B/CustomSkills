@@ -1,4 +1,6 @@
+#include "CustomSkills/CustomSkillsInterface.h"
 #include "CustomSkills/CustomSkillsManager.h"
+#include "CustomSkills/Hooks/ActorValue.h"
 #include "CustomSkills/Hooks/BeastSkillInfo.h"
 #include "CustomSkills/Hooks/Constellation.h"
 #include "CustomSkills/Hooks/Legendary.h"
@@ -8,9 +10,12 @@
 #include "CustomSkills/Hooks/SkillBooks.h"
 #include "CustomSkills/Hooks/SkillInfo.h"
 #include "CustomSkills/Hooks/SkillProgress.h"
+#include "CustomSkills/Hooks/SkillUse.h"
 #include "CustomSkills/Hooks/Training.h"
 #include "CustomSkills/Hooks/Update.h"
+#include "CustomSkills/Serialization.h"
 #include "Papyrus/CustomSkills.h"
+#include "Papyrus/Events.h"
 
 namespace
 {
@@ -62,13 +67,14 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	logger::info("{} v{}"sv, Plugin::NAME, Plugin::VERSION.string());
 
 	SKSE::Init(a_skse);
-	SKSE::AllocTrampoline(214);
+	SKSE::AllocTrampoline(242);
 
 	using namespace CustomSkills;
 
 	CustomSkillsManager::Initialize();
 
 	Update::WriteHooks();
+	ActorValue::WriteHooks();
 	MenuSetup::WriteHooks();
 	Navigation::WriteHooks();
 	Constellation::WriteHooks();
@@ -76,12 +82,32 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	SkillProgress::WriteHooks();
 	Legendary::WriteHooks();
 	BeastSkillInfo::WriteHooks();
+
 	Training::WriteHooks();
 	SkillBooks::WriteHooks();
+	SkillUse::WriteHooks();
 
-	SKSE::GetPapyrusInterface()->Register(Papyrus::CustomSkills::RegisterFuncs);
+	auto* const papyrus = SKSE::GetPapyrusInterface();
+	papyrus->Register(
+		[](RE::BSScript::IVirtualMachine* a_vm)
+		{
+			Papyrus::CustomSkills::RegisterFuncs(a_vm);
+			Papyrus::Events<RE::TESForm>::RegisterFuncs(a_vm);
+			Papyrus::Events<RE::BGSBaseAlias>::RegisterFuncs(a_vm);
+			Papyrus::Events<RE::ActiveEffect>::RegisterFuncs(a_vm);
 
-	SKSE::GetMessagingInterface()->RegisterListener(
+			return true;
+		});
+
+	auto* const serialization = SKSE::GetSerializationInterface();
+	serialization->SetUniqueID(Serialization::ID);
+	serialization->SetFormDeleteCallback(&Serialization::FormDeleteCallback);
+	serialization->SetLoadCallback(&Serialization::LoadCallback);
+	serialization->SetRevertCallback(&Serialization::RevertCallback);
+	serialization->SetSaveCallback(&Serialization::SaveCallback);
+
+	auto* const messaging = SKSE::GetMessagingInterface();
+	messaging->RegisterListener(
 		[](auto a_msg)
 		{
 			switch (a_msg->type) {
@@ -90,6 +116,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 				break;
 			case SKSE::MessagingInterface::kDataLoaded:
 				CustomSkillsManager::LoadSkills();
+				CustomSkills::Impl::CustomSkillsInterface::Dispatch();
 				break;
 			}
 		});

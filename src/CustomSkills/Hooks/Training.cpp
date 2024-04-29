@@ -26,7 +26,7 @@ namespace CustomSkills
 		auto GetTeachesSkill = +[](const RE::TESClass* a_class) -> RE::ActorValue
 		{
 			if (CustomSkillsManager::IsOurTrainingMode()) {
-				return RE::ActorValue::kTotal;
+				return static_cast<RE::ActorValue>(CUSTOM_SKILL_BASE_VALUE);
 			}
 			else {
 				return _GetTeachesSkill(a_class);

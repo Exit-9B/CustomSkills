@@ -55,17 +55,91 @@ namespace util
 		REL::safe_write(a_src, std::addressof(mem), sizeof(mem));
 	}
 
+	[[nodiscard]] constexpr int ascii_tolower(int ch) noexcept
+	{
+		if (ch >= 'A' && ch <= 'Z')
+			ch += 'a' - 'A';
+		return ch;
+	}
+
 	struct iless
 	{
-		template <std::ranges::contiguous_range R1, std::ranges::contiguous_range R2>
-		bool operator()(R1&& a_str1, R2&& a_str2) const
+		using is_transparent = int;
+
+		template <std::ranges::contiguous_range S1, std::ranges::contiguous_range S2>
+			requires(
+				std::is_same_v<std::ranges::range_value_t<S1>, char> &&
+				std::is_same_v<std::ranges::range_value_t<S2>, char>)
+		constexpr bool operator()(S1&& a_str1, S2&& a_str2) const
 		{
-			return ::_stricmp(std::ranges::data(a_str1), std::ranges::data(a_str2)) < 0;
+			std::size_t count = std::ranges::size(a_str2);
+			const std::size_t len1 = std::ranges::size(a_str1);
+			const bool shorter = len1 < count;
+			if (shorter)
+				count = len1;
+
+			if (count) {
+				const char* p1 = std::ranges::data(a_str1);
+				const char* p2 = std::ranges::data(a_str2);
+
+				do {
+					const int ch1 = ascii_tolower(*p1++);
+					const int ch2 = ascii_tolower(*p2++);
+					if (ch1 != ch2)
+						return ch1 < ch2;
+				} while (--count);
+			}
+
+			return shorter;
 		}
+
 	};
 
 	template <typename T, typename Allocator = std::allocator<std::pair<const std::string, T>>>
 	using istring_map = std::map<std::string, T, iless, Allocator>;
+
+	inline std::optional<RE::ActorValue> ParseSkill(std::string_view a_name)
+	{
+		static constexpr auto SKILLS = std::to_array<std::pair<std::string_view, RE::ActorValue>>({
+			{ "Alchemy"sv, RE::ActorValue::kAlchemy },
+			{ "Alteration"sv, RE::ActorValue::kAlteration },
+			{ "Block"sv, RE::ActorValue::kBlock },
+			{ "Conjuration"sv, RE::ActorValue::kConjuration },
+			{ "Destruction"sv, RE::ActorValue::kDestruction },
+			{ "Enchanting"sv, RE::ActorValue::kEnchanting },
+			{ "HeavyArmor"sv, RE::ActorValue::kHeavyArmor },
+			{ "Illusion"sv, RE::ActorValue::kIllusion },
+			{ "LightArmor"sv, RE::ActorValue::kLightArmor },
+			{ "Lockpicking"sv, RE::ActorValue::kLockpicking },
+			{ "Marksman"sv, RE::ActorValue::kArchery },
+			{ "OneHanded"sv, RE::ActorValue::kOneHanded },
+			{ "Pickpocket"sv, RE::ActorValue::kPickpocket },
+			{ "Restoration"sv, RE::ActorValue::kRestoration },
+			{ "Smithing"sv, RE::ActorValue::kSmithing },
+			{ "Sneak"sv, RE::ActorValue::kSneak },
+			{ "Speechcraft"sv, RE::ActorValue::kSpeech },
+			{ "TwoHanded"sv, RE::ActorValue::kTwoHanded },
+			{ "VampirePerks"sv, RE::ActorValue::kVampirePerks },
+			{ "WerewolfPerks"sv, RE::ActorValue::kWerewolfPerks },
+		});
+		static_assert(std::ranges::is_sorted(SKILLS));
+
+		const auto it = std::ranges::lower_bound(
+			SKILLS,
+			a_name,
+			iless{},
+			[](auto&& kv)
+			{
+				return kv.first;
+			});
+
+		if (it != std::end(SKILLS) && !iless{}(a_name, it->first)) {
+			return it->second;
+		}
+
+		return std::nullopt;
+	}
+
 }
 
 #define DLLEXPORT __declspec(dllexport)

@@ -4,6 +4,9 @@
 
 namespace CustomSkills
 {
+	// magic number so we don't conflict with other mods using the same mechanism for AVs
+	constexpr std::uint32_t CUSTOM_SKILL_BASE_VALUE = 'CSF' << 8;
+
 	class Skill final
 	{
 	public:
@@ -11,9 +14,17 @@ namespace CustomSkills
 
 		float GetLevel() const { return Level ? Level->value : 0.0f; }
 
+		float GetProgressPercent() const { return Ratio ? Ratio->value * 100.0f : 0.0f; }
+
 		static constexpr std::int32_t MaxLevel() { return 100; }
 
-		void Advance(float a_magnitude, bool a_isSkillUse = true, bool a_hideNotification = false);
+		void Advance(
+			float a_magnitude,
+			RE::TESForm* a_advanceObject,
+			bool a_isSkillUse = true,
+			bool a_hideNotification = false);
+
+		void Advance(float a_magnitude);
 
 		void Increment(std::uint32_t a_count);
 

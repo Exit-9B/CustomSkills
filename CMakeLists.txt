@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 
 project(
 	CustomSkills
-	VERSION 3.0.0
+	VERSION 3.1.0
 	LANGUAGES CXX
 )
 
@@ -21,6 +21,7 @@ set(SKSE_SUPPORT_VR OFF)
 
 SKSEPlugin_Add(
 	${PROJECT_NAME}
+	INCLUDE_DIR include
 	SOURCE_DIR src
 	SOURCES
 		.clang-format
@@ -56,6 +57,12 @@ file(ARCHIVE_EXTRACT
 	DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/tools"
 )
 
+file(GLOB SCRIPT_SOURCES
+	LIST_DIRECTORIES false
+	CONFIGURE_DEPENDS
+	"${PROJECT_SOURCE_DIR}/scripts/*.psc"
+)
+
 Papyrus_Add(
 	"PapyrusAPI"
 	#GAME ${SkyrimSE_PATH}
@@ -63,11 +70,17 @@ Papyrus_Add(
 	IMPORTS
 		"${PROJECT_SOURCE_DIR}/scripts"
 		"${CMAKE_CURRENT_BINARY_DIR}/tools/skse64_2_02_06/Data/Scripts/Source"
-	SOURCES
-		"${PROJECT_SOURCE_DIR}/scripts/CustomSkills.psc"
+	SOURCES ${SCRIPT_SOURCES}
 	COMPONENT ${CMAKE_INSTALL_DEFAULT_COMPONENT_NAME}
 	ANONYMIZE
 	SKIP_DEFAULT_IMPORTS
+)
+
+install(
+	FILES
+		"${PROJECT_SOURCE_DIR}/data/SKSE/CustomConsole/CustomSkills.yaml"
+	DESTINATION
+		SKSE/CustomConsole
 )
 
 set(CPACK_GENERATOR "7Z")
