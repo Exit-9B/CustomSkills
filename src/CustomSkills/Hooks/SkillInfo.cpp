@@ -63,7 +63,7 @@ namespace CustomSkills
 				const std::size_t idx = util::to_underlying(actorValue) - 6;
 				if (playerSkills && idx < 18) {
 					const auto& data = playerSkills->data->skills[idx];
-					level.SetNumber(player->GetActorValue(actorValue));
+					level.SetNumber(static_cast<std::int32_t>(player->GetActorValue(actorValue)));
 					percent.SetNumber((data.xp / data.levelThreshold) * 100);
 
 					legendary.SetNumber(
