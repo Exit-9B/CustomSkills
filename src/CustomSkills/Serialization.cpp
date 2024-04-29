@@ -8,12 +8,13 @@ namespace CustomSkills::Serialization
 	[[nodiscard]] static std::string TypeCodeToString(std::uint32_t a_typeCode)
 	{
 		std::ostringstream ss;
-		for (std::size_t i = 0; i < sizeof(a_typeCode); ++i) {
+		for (std::size_t i = sizeof(a_typeCode) - 1; i < sizeof(a_typeCode); --i) {
 			const char c = (a_typeCode >> (8 * i)) & 0xFF;
 			if (std::isprint(c))
 				ss << c;
 			else
-				ss << "\\x" << std::setfill('0') << std::setw(4) << static_cast<int>(c);
+				ss << "\\x" << std::setfill('0') << std::setw(4) << std::hex
+				   << static_cast<int>(c);
 		}
 		return ss.str();
 	}
