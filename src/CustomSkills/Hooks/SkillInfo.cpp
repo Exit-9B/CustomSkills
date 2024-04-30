@@ -19,9 +19,8 @@ namespace CustomSkills
 		const auto numSkills = CustomSkillsManager::GetCurrentSkillCount();
 		auto skillStats = std::vector<RE::GFxValue>(5 * numSkills);
 
-		static auto iDifficultyLevelMax = RE::GameSettingCollection::GetSingleton()->GetSetting(
-			"iDifficultyLevelMax");
-		const bool legendaryAvailable = iDifficultyLevelMax && iDifficultyLevelMax->GetSInt() >= 5;
+		static auto iDifficultyLevelMax = "iDifficultyLevelMax"_gs;
+		const bool legendaryAvailable = iDifficultyLevelMax && *iDifficultyLevelMax >= 5;
 
 		for (std::uint32_t i = 0; i < skillStats.size(); i += 5) {
 			RE::GFxValue& level = skillStats[i + 0];
@@ -63,7 +62,7 @@ namespace CustomSkills
 				const std::size_t idx = util::to_underlying(actorValue) - 6;
 				if (playerSkills && idx < 18) {
 					const auto& data = playerSkills->data->skills[idx];
-					level.SetNumber(player->GetActorValue(actorValue));
+					level.SetNumber(static_cast<std::int32_t>(player->GetActorValue(actorValue)));
 					percent.SetNumber((data.xp / data.levelThreshold) * 100);
 
 					legendary.SetNumber(

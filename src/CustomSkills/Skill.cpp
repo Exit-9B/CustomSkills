@@ -10,28 +10,16 @@ namespace CustomSkills
 		float a_improveMult,
 		float a_improveOffset)
 	{
-		static const RE::Setting* const
-			fSkillUseCurve = RE::GameSettingCollection::GetSingleton()->GetSetting(
-				"fSkillUseCurve");
-
-		const float useCurve = fSkillUseCurve ? fSkillUseCurve->GetFloat() : 1.95f;
-
 		return std::fma(
-			std::powf(static_cast<float>(a_currentRank), useCurve),
+			std::powf(static_cast<float>(a_currentRank), "fSkillUseCurve"_gs.value_or(1.95f)),
 			a_improveMult,
 			a_improveOffset);
 	}
 
 	static void IncreasePlayerCharacterXP(std::int32_t a_rankGained)
 	{
-		static const RE::Setting* const
-			fXPPerSkillRank = RE::GameSettingCollection::GetSingleton()->GetSetting(
-				"fXPPerSkillRank");
-
-		const float xpPerSkillRank = fXPPerSkillRank ? fXPPerSkillRank->GetFloat() : 1.0f;
-
 		const auto player = RE::PlayerCharacter::GetSingleton();
-		player->skills->data->xp += a_rankGained * xpPerSkillRank;
+		player->skills->data->xp += a_rankGained * "fXPPerSkillRank"_gs.value_or(1.0f);
 	}
 
 	void Skill::Advance(
