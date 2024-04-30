@@ -19,9 +19,8 @@ namespace CustomSkills
 		const auto numSkills = CustomSkillsManager::GetCurrentSkillCount();
 		auto skillStats = std::vector<RE::GFxValue>(5 * numSkills);
 
-		static auto iDifficultyLevelMax = RE::GameSettingCollection::GetSingleton()->GetSetting(
-			"iDifficultyLevelMax");
-		const bool legendaryAvailable = iDifficultyLevelMax && iDifficultyLevelMax->GetSInt() >= 5;
+		static auto iDifficultyLevelMax = "iDifficultyLevelMax"_gs;
+		const bool legendaryAvailable = iDifficultyLevelMax && *iDifficultyLevelMax >= 5;
 
 		for (std::uint32_t i = 0; i < skillStats.size(); i += 5) {
 			RE::GFxValue& level = skillStats[i + 0];

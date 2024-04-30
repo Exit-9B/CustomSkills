@@ -86,14 +86,9 @@ namespace CustomSkills
 
 	void Game::ShowSkillIncreasedMessage(std::string_view a_name, std::int32_t a_level)
 	{
-		static auto sSkillIncreased = RE::GameSettingCollection::GetSingleton()->GetSetting(
-			"sSkillIncreased");
+		static auto sSkillIncreased = "sSkillIncreased"_gs;
 
-		if (!sSkillIncreased) {
-			return;
-		}
-
-		const char* text = sSkillIncreased->GetString();
+		const char* text = sSkillIncreased ? *sSkillIncreased : nullptr;
 		if (!text || text[0] == '\0') {
 			return;
 		}

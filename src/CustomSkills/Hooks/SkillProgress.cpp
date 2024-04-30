@@ -239,10 +239,12 @@ namespace CustomSkills
 				continue;
 			}
 
-			static auto sRequirementsText = RE::GameSettingCollection::GetSingleton()->GetSetting(
-				"sRequirementsText");
+			static auto sRequirementsText = "sRequirementsText"_gs;
 			if (firstReq) {
-				ss << sRequirementsText->GetString();
+				if (sRequirementsText)
+					ss << *sRequirementsText;
+				else
+					ss << "Requires";
 			}
 			else {
 				ss << ",";
