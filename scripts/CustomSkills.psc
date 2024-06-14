@@ -1,4 +1,4 @@
-Scriptname CustomSkills Hidden
+Scriptname CustomSkills Native Hidden
 
 ; Get the current Custom Skills API version.
 ; Current version: 3
